@@ -315,6 +315,37 @@ class EmailService {
     }
   }
 
+  async sendShareCommentNotificationEmail(recipientEmail, ownerName, trip, share, comment) {
+    const safeOwnerName = escapeHtml(ownerName || 'there');
+    const safeTripName = escapeHtml(trip?.title || 'your trip');
+    const safeVisitorName = escapeHtml(comment?.visitorName || 'A visitor');
+    const safeComment = escapeHtml(comment?.comment || '');
+    const dashboardLink = `${process.env.FRONTEND_URL || 'https://app.globetrotter.io'}/workspace/trip-shares.html`;
+    const subject = `New comment on ${safeTripName}`;
+    const html = `
+      <h1>New comment on ${safeTripName}</h1>
+      <p>Hi ${safeOwnerName}, ${safeVisitorName} left a new comment on your shared trip.</p>
+      ${share?.title ? `<p><strong>Share:</strong> ${escapeHtml(share.title)}</p>` : ''}
+      <blockquote style="border-left:4px solid #0ea5e9;padding-left:12px;margin:16px 0;">${safeComment}</blockquote>
+      <p><a href="${encodeURI(dashboardLink)}">Review comments</a></p>
+    `;
+
+    try {
+      return await this._send(recipientEmail, subject, html, 'share-comment-notification', {
+        tripId: trip?.id,
+        shareId: share?.id,
+        commentId: comment?.id
+      });
+    } catch (error) {
+      await this._logFailure(recipientEmail, subject, 'share-comment-notification', {
+        tripId: trip?.id,
+        shareId: share?.id,
+        commentId: comment?.id
+      }, error.message);
+      throw error;
+    }
+  }
+
   async sendExpenseAddedEmail(email, firstName, expense, trip) {
     const safeFirstName = escapeHtml(firstName || 'there');
     const safeTripName = escapeHtml(trip.title || 'your trip');

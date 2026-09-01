@@ -3,9 +3,52 @@ const { authenticate, authorizeWorkspace, authorize } = require('../middleware/a
 const { asyncHandler } = require('../middleware/errorHandler');
 const { validateTrip } = require('../middleware/validation');
 const tripService = require('../services/tripService');
+const shareService = require('../services/shareService');
+const authService = require('../services/authService');
 const { db } = require('../config/database');
 
 const router = express.Router();
+
+async function getOptionalViewer(req) {
+  const authHeader = req.headers.authorization;
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    return {
+      email: req.query.email || req.headers['x-share-email'] || null
+    };
+  }
+
+  try {
+    const decoded = authService.verifyAccessToken(authHeader.substring(7));
+    const user = await db.User.findByPk(decoded.userId);
+    if (!user) {
+      return {
+        email: req.query.email || req.headers['x-share-email'] || null
+      };
+    }
+
+    return {
+      userId: user.id,
+      email: user.email
+    };
+  } catch {
+    return {
+      email: req.query.email || req.headers['x-share-email'] || null
+    };
+  }
+}
+
+function detectDevice(userAgent = '') {
+  if (/tablet|ipad/i.test(userAgent)) return 'tablet';
+  if (/mobile|android|iphone/i.test(userAgent)) return 'mobile';
+  return 'desktop';
+}
+
+function detectCountry(req) {
+  return req.headers['x-vercel-ip-country']
+    || req.headers['cf-ipcountry']
+    || req.headers['x-country-code']
+    || null;
+}
 
 // Create trip (protected)
 router.post('/', authenticate, asyncHandler(async (req, res) => {
@@ -46,20 +89,22 @@ router.get('/workspace/:workspaceId', authenticate, asyncHandler(async (req, res
 
 // Get trip details (public with share token)
 router.get('/public/:shareToken', asyncHandler(async (req, res) => {
-  const trip = await db.Trip.findOne({
-    where: { shareToken: req.params.shareToken, isDeleted: false },
-    include: [
-      { association: 'days' },
-      { association: 'expenses' },
-      { association: 'bookings' }
-    ]
-  });
+  const viewer = await getOptionalViewer(req);
+  const data = await shareService.getPublicTrip(req.params.shareToken, viewer);
+  const visitorId = req.headers['x-visitor-id'] || req.query.visitorId || null;
 
-  if (!trip) {
-    return res.status(404).json({ error: 'Trip not found or access denied' });
+  if (visitorId) {
+    const { share } = await shareService.recordView(data.share.id, visitorId, {
+      userAgent: req.headers['user-agent'],
+      ipAddress: req.ip,
+      country: detectCountry(req),
+      device: detectDevice(req.headers['user-agent'])
+    });
+    data.share.viewCount = share.viewCount;
+    data.share.uniqueViewers = share.uniqueViewers;
   }
 
-  res.json({ trip });
+  res.json(data);
 }));
 
 // Add day to trip
@@ -91,8 +136,12 @@ router.get('/:tripId/stats', authenticate, asyncHandler(async (req, res) => {
 
 // Generate share token
 router.post('/:tripId/share', authenticate, asyncHandler(async (req, res) => {
-  const shareToken = await tripService.generateShareToken(req.params.tripId);
-  res.json({ shareToken });
+  const share = await shareService.createShare(req.params.tripId, req.user.id, req.body || {});
+  res.status(201).json({
+    share,
+    shareToken: share.shareToken,
+    shareUrl: `${process.env.FRONTEND_URL || ''}/trip/public/${share.shareToken}`
+  });
 }));
 
 module.exports = router;

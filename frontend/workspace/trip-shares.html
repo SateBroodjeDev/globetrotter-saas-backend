@@ -1,0 +1,444 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full bg-slate-950">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Trip Shares – Globetrotter</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body { font-family: system-ui, sans-serif; }
+  </style>
+</head>
+<body class="min-h-full bg-slate-950 text-slate-100">
+  <div id="auth-gate" class="min-h-screen flex items-center justify-center px-4">
+    <div class="w-full max-w-md rounded-3xl border border-slate-800 bg-slate-900 p-8 space-y-4">
+      <div>
+        <p class="text-sm uppercase tracking-[0.3em] text-sky-300">Workspace</p>
+        <h1 class="text-2xl font-bold mt-2">Trip Shares</h1>
+      </div>
+      <input id="email" type="email" placeholder="Email" class="w-full rounded-xl bg-slate-950 border border-slate-700 px-3 py-2 outline-none focus:border-sky-500">
+      <input id="password" type="password" placeholder="Password" class="w-full rounded-xl bg-slate-950 border border-slate-700 px-3 py-2 outline-none focus:border-sky-500">
+      <p id="auth-error" class="text-sm text-rose-300"></p>
+      <button id="login-button" class="w-full rounded-xl bg-sky-600 hover:bg-sky-500 px-4 py-2.5 font-medium">Sign in</button>
+    </div>
+  </div>
+
+  <main id="app" class="hidden max-w-7xl mx-auto px-4 py-8 space-y-6">
+    <header class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+      <div>
+        <p class="text-sm uppercase tracking-[0.3em] text-sky-300">Workspace</p>
+        <h1 class="text-3xl font-bold">Trip Shares</h1>
+        <p class="text-slate-400 mt-2">Create public trip links, review analytics, and moderate visitor comments.</p>
+      </div>
+      <div class="flex flex-wrap gap-3">
+        <select id="workspace-select" class="rounded-xl bg-slate-900 border border-slate-700 px-3 py-2"></select>
+        <button id="refresh-button" class="rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 px-4 py-2">Refresh</button>
+        <button id="logout-button" class="rounded-xl bg-rose-900/60 hover:bg-rose-800/60 border border-rose-700 px-4 py-2">Logout</button>
+      </div>
+    </header>
+
+    <section class="grid grid-cols-1 lg:grid-cols-[1.2fr_1fr] gap-6">
+      <article class="rounded-3xl border border-slate-800 bg-slate-900 p-6 space-y-4">
+        <div class="flex items-center justify-between">
+          <h2 class="text-xl font-semibold">Create New Share</h2>
+          <p id="create-feedback" class="text-sm text-slate-400"></p>
+        </div>
+        <form id="create-share-form" class="space-y-4">
+          <select id="trip-select" class="w-full rounded-xl bg-slate-950 border border-slate-700 px-3 py-2"></select>
+          <input id="share-title" type="text" placeholder="Custom title" class="w-full rounded-xl bg-slate-950 border border-slate-700 px-3 py-2">
+          <textarea id="share-message" placeholder="Optional message" class="w-full min-h-[110px] rounded-xl bg-slate-950 border border-slate-700 px-3 py-2"></textarea>
+          <div class="grid md:grid-cols-2 gap-4">
+            <select id="share-visibility" class="rounded-xl bg-slate-950 border border-slate-700 px-3 py-2">
+              <option value="public">Public</option>
+              <option value="workspace-only">Workspace-only</option>
+              <option value="email-list">Invited emails only</option>
+            </select>
+            <input id="share-expires" type="datetime-local" class="rounded-xl bg-slate-950 border border-slate-700 px-3 py-2">
+          </div>
+          <textarea id="share-emails" placeholder="Invite emails (comma separated)" class="w-full min-h-[90px] rounded-xl bg-slate-950 border border-slate-700 px-3 py-2"></textarea>
+          <div class="grid sm:grid-cols-3 gap-3">
+            <label class="flex items-center gap-2 rounded-xl bg-slate-950 border border-slate-700 px-3 py-2"><input id="allow-comments" type="checkbox" checked> Allow comments</label>
+            <label class="flex items-center gap-2 rounded-xl bg-slate-950 border border-slate-700 px-3 py-2"><input id="hide-expenses" type="checkbox"> Hide expense details</label>
+            <label class="flex items-center gap-2 rounded-xl bg-slate-950 border border-slate-700 px-3 py-2"><input id="send-emails" type="checkbox"> Send invite emails</label>
+          </div>
+          <button class="rounded-xl bg-sky-600 hover:bg-sky-500 px-4 py-2.5 font-medium" type="submit">Create share</button>
+        </form>
+      </article>
+
+      <article class="rounded-3xl border border-slate-800 bg-slate-900 p-6 space-y-4">
+        <h2 class="text-xl font-semibold">Share Analytics</h2>
+        <div id="analytics-empty" class="text-sm text-slate-400">Select a share to inspect analytics.</div>
+        <div id="analytics-panel" class="hidden space-y-4">
+          <div class="grid grid-cols-2 gap-4">
+            <div class="rounded-2xl bg-slate-800 border border-slate-700 p-4">
+              <p class="text-xs text-slate-400">Views</p>
+              <p id="analytics-views" class="text-2xl font-bold mt-1">0</p>
+            </div>
+            <div class="rounded-2xl bg-slate-800 border border-slate-700 p-4">
+              <p class="text-xs text-slate-400">Unique visitors</p>
+              <p id="analytics-unique" class="text-2xl font-bold mt-1">0</p>
+            </div>
+            <div class="rounded-2xl bg-slate-800 border border-slate-700 p-4">
+              <p class="text-xs text-slate-400">Avg. time</p>
+              <p id="analytics-time" class="text-2xl font-bold mt-1">0s</p>
+            </div>
+            <div class="rounded-2xl bg-slate-800 border border-slate-700 p-4">
+              <p class="text-xs text-slate-400">Comments</p>
+              <p id="analytics-comments" class="text-2xl font-bold mt-1">0</p>
+            </div>
+          </div>
+          <div class="rounded-2xl bg-slate-800 border border-slate-700 p-4">
+            <div class="flex items-center justify-between gap-3 mb-3">
+              <h3 class="font-medium">Device breakdown</h3>
+              <a id="analytics-export" href="#" class="text-sm text-sky-300 hover:text-sky-200">Export CSV</a>
+            </div>
+            <div id="analytics-devices" class="text-sm text-slate-300"></div>
+          </div>
+          <div class="rounded-2xl bg-slate-800 border border-slate-700 p-4">
+            <h3 class="font-medium mb-3">Top countries</h3>
+            <div id="analytics-countries" class="space-y-2 text-sm text-slate-300"></div>
+          </div>
+          <div class="rounded-2xl bg-slate-800 border border-slate-700 p-4">
+            <h3 class="font-medium mb-3">Recent views</h3>
+            <div id="analytics-recent" class="space-y-2 text-sm text-slate-300"></div>
+          </div>
+        </div>
+      </article>
+    </section>
+
+    <section class="rounded-3xl border border-slate-800 bg-slate-900 p-6">
+      <h2 class="text-xl font-semibold mb-4">Active Shares</h2>
+      <div id="shares-list" class="space-y-4"></div>
+    </section>
+
+    <section class="rounded-3xl border border-slate-800 bg-slate-900 p-6">
+      <div class="flex items-center justify-between gap-3 mb-4">
+        <h2 class="text-xl font-semibold">Comment Moderation</h2>
+        <p id="moderation-title" class="text-sm text-slate-400">Select a share to review comments.</p>
+      </div>
+      <div id="comments-list" class="space-y-4"></div>
+    </section>
+  </main>
+
+  <script>
+    const API = '/api';
+    let token = localStorage.getItem('gt_token');
+    let workspaces = [];
+    let currentWorkspaceId = localStorage.getItem('gt_workspace');
+    let currentShares = [];
+    let selectedShareId = null;
+
+    function authHeaders(extra = {}) {
+      return {
+        'Content-Type': 'application/json',
+        Authorization: 'Bearer ' + token,
+        ...extra
+      };
+    }
+
+    async function authFetch(url, options = {}) {
+      const response = await fetch(url, {
+        ...options,
+        headers: authHeaders(options.headers || {})
+      });
+      if (response.status === 401) {
+        logout();
+        throw new Error('Unauthorized');
+      }
+      return response;
+    }
+
+    function logout() {
+      localStorage.removeItem('gt_token');
+      localStorage.removeItem('gt_workspace');
+      location.reload();
+    }
+
+    async function login() {
+      const email = document.getElementById('email').value.trim();
+      const password = document.getElementById('password').value;
+      const errorEl = document.getElementById('auth-error');
+      errorEl.textContent = '';
+
+      try {
+        const response = await fetch(`${API}/auth/login`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, password })
+        });
+        const data = await response.json();
+        if (!response.ok) {
+          throw new Error(data.error?.message || data.error || 'Login failed');
+        }
+
+        token = data.accessToken || data.token;
+        localStorage.setItem('gt_token', token);
+        workspaces = data.workspaces || [];
+        if (!currentWorkspaceId && workspaces[0]?.id) {
+          currentWorkspaceId = workspaces[0].id;
+          localStorage.setItem('gt_workspace', currentWorkspaceId);
+        }
+        await showApp();
+      } catch (error) {
+        errorEl.textContent = error.message;
+      }
+    }
+
+    function populateWorkspaceSelect() {
+      const select = document.getElementById('workspace-select');
+      select.innerHTML = workspaces.map((workspace) => `<option value="${workspace.id}">${workspace.name}</option>`).join('');
+      if (currentWorkspaceId) {
+        select.value = currentWorkspaceId;
+      }
+    }
+
+    async function ensureWorkspaces() {
+      if (workspaces.length) {
+        return;
+      }
+
+      const response = await authFetch(`${API}/workspaces`);
+      const data = await response.json();
+      workspaces = data.workspaces || [];
+      if (!currentWorkspaceId && workspaces[0]?.id) {
+        currentWorkspaceId = workspaces[0].id;
+        localStorage.setItem('gt_workspace', currentWorkspaceId);
+      }
+    }
+
+    async function loadTrips() {
+      const response = await authFetch(`${API}/trips/workspace/${currentWorkspaceId}`);
+      const data = await response.json();
+      const select = document.getElementById('trip-select');
+      select.innerHTML = (data.trips || []).map((trip) => `<option value="${trip.id}">${trip.title}</option>`).join('');
+    }
+
+    function buildShareCard(share) {
+      const shareUrl = `${window.location.origin}/trip/public/${share.shareToken}`;
+      const expired = share.expiresAt && new Date(share.expiresAt) < new Date();
+      return `
+        <article class="rounded-2xl border border-slate-700 bg-slate-800 p-4">
+          <div class="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+            <div class="space-y-2">
+              <div>
+                <p class="text-xs uppercase tracking-wide text-sky-300">${share.trip?.title || 'Trip share'}</p>
+                <h3 class="text-lg font-semibold">${share.title || share.trip?.title || 'Shared trip'}</h3>
+              </div>
+              <p class="text-sm text-slate-400 break-all">${shareUrl}</p>
+              <div class="flex flex-wrap gap-3 text-sm text-slate-300">
+                <span>Visibility: ${share.visibility}</span>
+                <span>Views: ${share.viewCount}</span>
+                <span>Unique: ${share.uniqueViewers}</span>
+                <span>Expires: ${share.expiresAt ? new Date(share.expiresAt).toLocaleString() : 'Never'}</span>
+                <span>Status: ${expired || !share.isActive ? 'Inactive' : 'Active'}</span>
+              </div>
+            </div>
+            <div class="flex flex-wrap gap-2">
+              <button class="copy-share rounded-xl bg-slate-900 border border-slate-600 px-3 py-2 text-sm" data-url="${shareUrl}">Copy link</button>
+              <button class="view-analytics rounded-xl bg-slate-900 border border-slate-600 px-3 py-2 text-sm" data-id="${share.id}">Analytics</button>
+              <button class="revoke-share rounded-xl bg-rose-900/50 border border-rose-700 px-3 py-2 text-sm" data-id="${share.id}">Revoke</button>
+            </div>
+          </div>
+        </article>
+      `;
+    }
+
+    async function loadShares() {
+      const response = await authFetch(`${API}/shares`);
+      const data = await response.json();
+      currentShares = (data.shares || []).filter((share) => !currentWorkspaceId || share.trip?.workspaceId === currentWorkspaceId);
+      const list = document.getElementById('shares-list');
+      list.innerHTML = currentShares.length
+        ? currentShares.map(buildShareCard).join('')
+        : '<p class="text-sm text-slate-400">No shares created yet.</p>';
+    }
+
+    function renderAnalytics(analytics) {
+      document.getElementById('analytics-empty').classList.add('hidden');
+      document.getElementById('analytics-panel').classList.remove('hidden');
+      document.getElementById('analytics-views').textContent = analytics.totalViews;
+      document.getElementById('analytics-unique').textContent = analytics.uniqueViewers;
+      document.getElementById('analytics-time').textContent = `${analytics.averageTimeSpent}s`;
+      document.getElementById('analytics-comments').textContent = analytics.totalComments;
+      document.getElementById('analytics-export').dataset.shareId = selectedShareId;
+      document.getElementById('analytics-devices').innerHTML = `
+        <p>Desktop: ${analytics.deviceBreakdown.desktop}</p>
+        <p>Mobile: ${analytics.deviceBreakdown.mobile}</p>
+        <p>Tablet: ${analytics.deviceBreakdown.tablet}</p>
+      `;
+      document.getElementById('analytics-countries').innerHTML = analytics.topCountries.length
+        ? analytics.topCountries.map((item) => `<p>${item.name}: ${item.count}</p>`).join('')
+        : '<p class="text-slate-400">No country data yet.</p>';
+      document.getElementById('analytics-recent').innerHTML = analytics.recentViews.length
+        ? analytics.recentViews.map((view) => `<p>${new Date(view.viewedAt).toLocaleString()} • ${view.device || 'unknown'} • ${view.country || 'Unknown'} • ${view.timeSpentSeconds || 0}s</p>`).join('')
+        : '<p class="text-slate-400">No views yet.</p>';
+    }
+
+    async function loadAnalytics(shareId) {
+      selectedShareId = shareId;
+      const response = await authFetch(`${API}/shares/${shareId}/analytics`);
+      const data = await response.json();
+      renderAnalytics(data.analytics);
+      document.getElementById('moderation-title').textContent = 'Loading comments…';
+      await loadComments(shareId);
+    }
+
+    function renderModerationComments(comments) {
+      const list = document.getElementById('comments-list');
+      list.innerHTML = comments.length
+        ? comments.map((comment) => `
+          <article class="rounded-2xl border border-slate-700 bg-slate-800 p-4">
+            <div class="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+              <div>
+                <p class="font-medium">${comment.visitorName}${comment.visitorEmail ? ` <span class="text-slate-400 text-sm">(${comment.visitorEmail})</span>` : ''}</p>
+                <p class="text-xs text-slate-400 mt-1">${new Date(comment.createdAt).toLocaleString()}</p>
+                <p class="text-slate-300 mt-3 whitespace-pre-wrap">${comment.comment}</p>
+                <p class="text-xs mt-3 ${comment.isSpam ? 'text-rose-300' : comment.isApproved ? 'text-emerald-300' : 'text-amber-300'}">${comment.isSpam ? 'Marked as spam' : comment.isApproved ? 'Approved' : 'Pending review'}</p>
+              </div>
+              <div class="flex flex-wrap gap-2">
+                <button class="approve-comment rounded-xl bg-emerald-700/70 px-3 py-2 text-sm" data-id="${comment.id}">Approve</button>
+                <button class="spam-comment rounded-xl bg-amber-700/70 px-3 py-2 text-sm" data-id="${comment.id}">Spam</button>
+                <button class="delete-comment rounded-xl bg-rose-900/60 px-3 py-2 text-sm" data-id="${comment.id}">Delete</button>
+              </div>
+            </div>
+          </article>
+        `).join('')
+        : '<p class="text-sm text-slate-400">No comments for this share yet.</p>';
+      document.getElementById('moderation-title').textContent = selectedShareId ? 'Moderating selected share' : 'Select a share to review comments.';
+    }
+
+    async function loadComments(shareId) {
+      const response = await authFetch(`${API}/shares/${shareId}/comments`);
+      const data = await response.json();
+      renderModerationComments(data.comments || []);
+    }
+
+    async function createShare(event) {
+      event.preventDefault();
+      const feedback = document.getElementById('create-feedback');
+      feedback.textContent = 'Creating share…';
+      const tripId = document.getElementById('trip-select').value;
+      const emails = document.getElementById('share-emails').value
+        .split(',')
+        .map((item) => item.trim())
+        .filter(Boolean);
+
+      const payload = {
+        title: document.getElementById('share-title').value.trim() || null,
+        message: document.getElementById('share-message').value.trim() || null,
+        visibility: document.getElementById('share-visibility').value,
+        expiresAt: document.getElementById('share-expires').value || null,
+        emails,
+        allowedEmails: emails,
+        allowComments: document.getElementById('allow-comments').checked,
+        hideExpenseDetails: document.getElementById('hide-expenses').checked,
+        sendEmails: document.getElementById('send-emails').checked
+      };
+
+      try {
+        const response = await authFetch(`${API}/trips/${tripId}/share`, {
+          method: 'POST',
+          body: JSON.stringify(payload)
+        });
+        const data = await response.json();
+        if (!response.ok) {
+          throw new Error(data.error?.message || data.error || 'Failed to create share');
+        }
+        feedback.textContent = 'Share created.';
+        document.getElementById('create-share-form').reset();
+        await loadShares();
+        if (data.share?.id) {
+          await loadAnalytics(data.share.id);
+        }
+      } catch (error) {
+        feedback.textContent = error.message;
+      }
+    }
+
+    async function revokeShare(shareId) {
+      await authFetch(`${API}/shares/${shareId}`, { method: 'DELETE' });
+      if (selectedShareId === shareId) {
+        selectedShareId = null;
+        document.getElementById('analytics-empty').classList.remove('hidden');
+        document.getElementById('analytics-panel').classList.add('hidden');
+      }
+      await loadShares();
+      document.getElementById('comments-list').innerHTML = '<p class="text-sm text-slate-400">Select a share to review comments.</p>';
+    }
+
+    async function moderateComment(action, commentId) {
+      const url = action === 'delete'
+        ? `${API}/shares/comments/${commentId}`
+        : `${API}/shares/comments/${commentId}/${action}`;
+      const method = action === 'delete' ? 'DELETE' : 'PUT';
+      await authFetch(url, { method });
+      if (selectedShareId) {
+        await Promise.all([loadAnalytics(selectedShareId), loadComments(selectedShareId), loadShares()]);
+      }
+    }
+
+    async function showApp() {
+      await ensureWorkspaces();
+      populateWorkspaceSelect();
+      document.getElementById('auth-gate').classList.add('hidden');
+      document.getElementById('app').classList.remove('hidden');
+      await Promise.all([loadTrips(), loadShares()]);
+    }
+
+    document.getElementById('login-button').addEventListener('click', login);
+    document.getElementById('logout-button').addEventListener('click', logout);
+    document.getElementById('refresh-button').addEventListener('click', () => Promise.all([loadTrips(), loadShares()]));
+    document.getElementById('workspace-select').addEventListener('change', async (event) => {
+      currentWorkspaceId = event.target.value;
+      localStorage.setItem('gt_workspace', currentWorkspaceId);
+      await Promise.all([loadTrips(), loadShares()]);
+    });
+    document.getElementById('create-share-form').addEventListener('submit', createShare);
+    document.getElementById('shares-list').addEventListener('click', async (event) => {
+      const button = event.target.closest('button');
+      if (!button) return;
+
+      if (button.classList.contains('copy-share')) {
+        await navigator.clipboard.writeText(button.dataset.url);
+        button.textContent = 'Copied!';
+        setTimeout(() => { button.textContent = 'Copy link'; }, 1200);
+      } else if (button.classList.contains('view-analytics')) {
+        await loadAnalytics(button.dataset.id);
+      } else if (button.classList.contains('revoke-share')) {
+        await revokeShare(button.dataset.id);
+      }
+    });
+    document.getElementById('comments-list').addEventListener('click', async (event) => {
+      const button = event.target.closest('button');
+      if (!button) return;
+      if (button.classList.contains('approve-comment')) await moderateComment('approve', button.dataset.id);
+      if (button.classList.contains('spam-comment')) await moderateComment('spam', button.dataset.id);
+      if (button.classList.contains('delete-comment')) await moderateComment('delete', button.dataset.id);
+    });
+    document.getElementById('analytics-export').addEventListener('click', async (event) => {
+      event.preventDefault();
+      if (!selectedShareId) return;
+
+      const response = await authFetch(`${API}/shares/${selectedShareId}/analytics?format=csv`, {
+        headers: {}
+      });
+      const csv = await response.text();
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `share-${selectedShareId}-analytics.csv`;
+      link.click();
+      URL.revokeObjectURL(url);
+    });
+
+    document.addEventListener('DOMContentLoaded', () => {
+      if (token) {
+        showApp().catch((error) => {
+          document.getElementById('auth-error').textContent = error.message;
+        });
+      }
+    });
+  </script>
+</body>
+</html>
