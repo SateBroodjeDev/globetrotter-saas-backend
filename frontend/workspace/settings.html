@@ -1,0 +1,1043 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full bg-gray-950">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Workspace Settings – Globetrotter</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <style>
+    body { font-family: system-ui, sans-serif; }
+    .tab-btn { @apply px-4 py-2 text-sm font-medium rounded-lg transition; }
+    .tab-btn.active { @apply bg-indigo-600 text-white; }
+    .tab-btn:not(.active) { @apply text-gray-400 hover:text-white hover:bg-gray-800; }
+    .tab-panel { display: none; }
+    .tab-panel.active { display: block; }
+    .input { @apply w-full bg-gray-800 border border-gray-700 rounded-xl px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none; }
+    .btn-primary { @apply bg-indigo-600 hover:bg-indigo-500 text-white font-medium px-4 py-2 rounded-xl text-sm transition; }
+    .btn-danger { @apply bg-red-600 hover:bg-red-500 text-white font-medium px-4 py-2 rounded-xl text-sm transition; }
+    .btn-secondary { @apply bg-gray-700 hover:bg-gray-600 text-white font-medium px-4 py-2 rounded-xl text-sm transition; }
+    .card { @apply bg-gray-900 border border-gray-800 rounded-xl p-6; }
+    .role-badge { @apply inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold; }
+  </style>
+</head>
+<body class="h-full text-gray-100 bg-gray-950">
+
+<!-- Auth gate -->
+<div id="auth-gate" class="fixed inset-0 bg-gray-950 z-50 flex items-center justify-center p-4">
+  <div class="bg-gray-900 border border-gray-700 rounded-2xl p-8 w-full max-w-sm space-y-5 shadow-2xl">
+    <div class="text-center">
+      <div class="w-14 h-14 bg-indigo-600 rounded-xl flex items-center justify-center mx-auto mb-3">
+        <i data-lucide="settings" class="w-7 h-7 text-white"></i>
+      </div>
+      <h1 class="text-xl font-bold">Workspace Settings</h1>
+      <p class="text-xs text-gray-400 mt-1">Sign in to manage your workspace</p>
+    </div>
+    <input id="login-email" type="email" placeholder="Email" class="input">
+    <input id="login-password" type="password" placeholder="Password" class="input">
+    <button onclick="handleLogin()" class="w-full py-2.5 btn-primary">Sign In</button>
+    <p id="login-error" class="text-xs text-red-400 text-center hidden"></p>
+  </div>
+</div>
+
+<!-- App shell -->
+<div id="app" class="hidden h-full flex">
+
+  <!-- Sidebar -->
+  <aside class="w-64 bg-gray-900 border-r border-gray-800 flex flex-col">
+    <div class="px-5 py-5 border-b border-gray-800">
+      <div class="flex items-center gap-3">
+        <div class="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center">
+          <i data-lucide="compass" class="w-4 h-4 text-white"></i>
+        </div>
+        <div>
+          <span class="font-bold text-sm block" id="sidebar-workspace-name">Workspace</span>
+          <span id="sidebar-plan-badge" class="text-xs text-indigo-400">Starter</span>
+        </div>
+      </div>
+    </div>
+    <nav class="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
+      <a href="#" onclick="switchTab('general'); return false" class="sidebar-link flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm text-gray-400 hover:bg-gray-800 hover:text-white transition">
+        <i data-lucide="sliders" class="w-4 h-4"></i> General
+      </a>
+      <a href="#" onclick="switchTab('members'); return false" class="sidebar-link flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm text-gray-400 hover:bg-gray-800 hover:text-white transition">
+        <i data-lucide="users" class="w-4 h-4"></i> Team Members
+      </a>
+      <a href="#" onclick="switchTab('billing'); return false" class="sidebar-link flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm text-gray-400 hover:bg-gray-800 hover:text-white transition">
+        <i data-lucide="credit-card" class="w-4 h-4"></i> Billing
+      </a>
+      <a href="#" id="nav-branding" onclick="switchTab('branding'); return false" class="sidebar-link flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm text-gray-400 hover:bg-gray-800 hover:text-white transition">
+        <i data-lucide="palette" class="w-4 h-4"></i> Branding <span class="ml-auto text-xs bg-indigo-900 text-indigo-300 px-1.5 py-0.5 rounded">Pro+</span>
+      </a>
+      <a href="#" onclick="switchTab('security'); return false" class="sidebar-link flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm text-gray-400 hover:bg-gray-800 hover:text-white transition">
+        <i data-lucide="shield" class="w-4 h-4"></i> Security
+      </a>
+      <a href="analytics.html" class="flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm text-gray-400 hover:bg-gray-800 hover:text-white transition">
+        <i data-lucide="bar-chart-2" class="w-4 h-4"></i> Analytics
+      </a>
+      <a href="#" onclick="switchTab('danger'); return false" class="sidebar-link flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm text-red-400 hover:bg-red-950 hover:text-red-300 transition">
+        <i data-lucide="alert-triangle" class="w-4 h-4"></i> Danger Zone
+      </a>
+    </nav>
+    <div class="px-3 py-4 border-t border-gray-800">
+      <button onclick="handleLogout()" class="flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm text-red-400 hover:text-red-300 hover:bg-red-950 transition w-full text-left">
+        <i data-lucide="log-out" class="w-4 h-4"></i> Logout
+      </button>
+    </div>
+  </aside>
+
+  <!-- Main content -->
+  <main class="flex-1 overflow-y-auto">
+
+    <!-- Top bar alert zone -->
+    <div id="alert-zone" class="hidden bg-yellow-900 border-b border-yellow-700 px-6 py-3 text-sm text-yellow-200"></div>
+
+    <!-- Header -->
+    <header class="bg-gray-900 border-b border-gray-800 px-6 py-4 flex items-center justify-between sticky top-0 z-10">
+      <h2 id="page-title" class="font-semibold text-lg">Workspace Settings</h2>
+      <div class="flex items-center gap-3">
+        <span id="user-email" class="text-xs text-gray-400"></span>
+        <span id="role-badge" class="role-badge bg-indigo-900 text-indigo-300">owner</span>
+      </div>
+    </header>
+
+    <!-- Toast -->
+    <div id="toast" class="fixed top-5 right-5 z-50 hidden">
+      <div id="toast-inner" class="flex items-center gap-3 bg-gray-800 border border-gray-700 rounded-xl px-4 py-3 shadow-2xl text-sm">
+        <i id="toast-icon" data-lucide="check-circle" class="w-4 h-4 text-green-400"></i>
+        <span id="toast-msg"></span>
+      </div>
+    </div>
+
+    <div class="p-6 max-w-4xl">
+
+      <!-- ── GENERAL TAB ── -->
+      <div id="tab-general" class="tab-panel active space-y-6">
+        <div class="card">
+          <h3 class="font-semibold mb-4">General Information</h3>
+          <div class="space-y-4">
+            <div>
+              <label class="text-xs text-gray-400 block mb-1">Workspace Name</label>
+              <input id="ws-name" type="text" class="input" placeholder="My Workspace">
+            </div>
+            <div>
+              <label class="text-xs text-gray-400 block mb-1">Description</label>
+              <textarea id="ws-description" rows="3" class="input resize-none" placeholder="Describe your workspace..."></textarea>
+            </div>
+            <div class="grid grid-cols-2 gap-4">
+              <div>
+                <label class="text-xs text-gray-400 block mb-1">Owner</label>
+                <p id="ws-owner" class="text-sm text-gray-300">—</p>
+              </div>
+              <div>
+                <label class="text-xs text-gray-400 block mb-1">Created</label>
+                <p id="ws-created" class="text-sm text-gray-300">—</p>
+              </div>
+              <div>
+                <label class="text-xs text-gray-400 block mb-1">Members</label>
+                <p id="ws-member-count" class="text-sm text-gray-300">—</p>
+              </div>
+              <div>
+                <label class="text-xs text-gray-400 block mb-1">Plan</label>
+                <p id="ws-plan" class="text-sm"></p>
+              </div>
+            </div>
+            <button onclick="saveGeneralSettings()" class="btn-primary">Save Changes</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── MEMBERS TAB ── -->
+      <div id="tab-members" class="tab-panel space-y-6">
+
+        <!-- Invite card -->
+        <div class="card">
+          <h3 class="font-semibold mb-4">Invite Member</h3>
+          <div class="flex gap-3">
+            <input id="invite-email" type="email" class="input" placeholder="email@example.com">
+            <select id="invite-role" class="input w-40">
+              <option value="admin">Admin</option>
+              <option value="editor" selected>Editor</option>
+              <option value="viewer">Viewer</option>
+            </select>
+            <button onclick="inviteMember()" class="btn-primary whitespace-nowrap">Send Invite</button>
+          </div>
+          <textarea id="invite-message" rows="2" class="input mt-3 resize-none" placeholder="Optional message to include in the invite email..."></textarea>
+        </div>
+
+        <!-- Role definitions -->
+        <div class="card">
+          <h3 class="font-semibold mb-3">Role Definitions</h3>
+          <div class="grid grid-cols-2 gap-3 text-sm">
+            <div class="bg-gray-800 rounded-lg p-3"><span class="role-badge bg-purple-900 text-purple-300 mr-2">Owner</span>Full access, manage billing, delete workspace</div>
+            <div class="bg-gray-800 rounded-lg p-3"><span class="role-badge bg-blue-900 text-blue-300 mr-2">Admin</span>Manage members, trips, settings (not billing)</div>
+            <div class="bg-gray-800 rounded-lg p-3"><span class="role-badge bg-green-900 text-green-300 mr-2">Editor</span>Create/edit trips & expenses, no member management</div>
+            <div class="bg-gray-800 rounded-lg p-3"><span class="role-badge bg-gray-700 text-gray-300 mr-2">Viewer</span>Read-only access to all data</div>
+          </div>
+        </div>
+
+        <!-- Members table -->
+        <div class="card">
+          <h3 class="font-semibold mb-4">Current Members</h3>
+          <div class="overflow-x-auto">
+            <table class="w-full text-sm">
+              <thead>
+                <tr class="text-gray-400 border-b border-gray-800">
+                  <th class="text-left py-2 pr-4">Member</th>
+                  <th class="text-left py-2 pr-4">Role</th>
+                  <th class="text-left py-2 pr-4">Joined</th>
+                  <th class="text-left py-2 pr-4">Last Active</th>
+                  <th class="text-left py-2">Actions</th>
+                </tr>
+              </thead>
+              <tbody id="members-table-body"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Pending invitations -->
+        <div class="card">
+          <h3 class="font-semibold mb-4">Pending Invitations</h3>
+          <div id="invitations-empty" class="text-sm text-gray-500">No pending invitations.</div>
+          <div class="overflow-x-auto hidden" id="invitations-table-wrap">
+            <table class="w-full text-sm">
+              <thead>
+                <tr class="text-gray-400 border-b border-gray-800">
+                  <th class="text-left py-2 pr-4">Email</th>
+                  <th class="text-left py-2 pr-4">Role</th>
+                  <th class="text-left py-2 pr-4">Invited</th>
+                  <th class="text-left py-2">Actions</th>
+                </tr>
+              </thead>
+              <tbody id="invitations-table-body"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── BILLING TAB ── -->
+      <div id="tab-billing" class="tab-panel space-y-6">
+
+        <div class="card">
+          <h3 class="font-semibold mb-4">Current Subscription</h3>
+          <div id="subscription-info" class="space-y-3 text-sm">
+            <div class="flex items-center gap-3">
+              <span class="text-gray-400 w-40">Plan</span>
+              <span id="sub-plan" class="font-semibold">—</span>
+            </div>
+            <div class="flex items-center gap-3">
+              <span class="text-gray-400 w-40">Status</span>
+              <span id="sub-status">—</span>
+            </div>
+            <div class="flex items-center gap-3">
+              <span class="text-gray-400 w-40">Renewal Date</span>
+              <span id="sub-renewal">—</span>
+            </div>
+            <div class="flex items-center gap-3">
+              <span class="text-gray-400 w-40">Price / Month</span>
+              <span id="sub-price">—</span>
+            </div>
+          </div>
+          <div class="flex gap-3 mt-5">
+            <a href="../pricing.html" class="btn-primary">Upgrade Plan</a>
+            <button onclick="openBillingPortal()" class="btn-secondary">Manage Payment Method</button>
+            <button onclick="cancelSubscription()" class="btn-danger">Cancel Subscription</button>
+          </div>
+        </div>
+
+        <div class="card">
+          <h3 class="font-semibold mb-4">Usage & Limits</h3>
+          <div id="usage-info" class="space-y-3 text-sm">
+            <div id="usage-loading" class="text-gray-500">Loading...</div>
+          </div>
+        </div>
+
+        <div class="card">
+          <h3 class="font-semibold mb-4">Apply Coupon</h3>
+          <div class="flex gap-3">
+            <input id="coupon-input" type="text" class="input" placeholder="Coupon code">
+            <button onclick="applyCoupon()" class="btn-secondary">Apply</button>
+          </div>
+        </div>
+
+        <div class="card">
+          <h3 class="font-semibold mb-4">Billing History</h3>
+          <div id="invoices-empty" class="text-sm text-gray-500">No invoices found.</div>
+          <table id="invoices-table" class="w-full text-sm hidden">
+            <thead>
+              <tr class="text-gray-400 border-b border-gray-800">
+                <th class="text-left py-2 pr-4">Date</th>
+                <th class="text-left py-2 pr-4">Amount</th>
+                <th class="text-left py-2 pr-4">Status</th>
+                <th class="text-left py-2">PDF</th>
+              </tr>
+            </thead>
+            <tbody id="invoices-table-body"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- ── BRANDING TAB ── -->
+      <div id="tab-branding" class="tab-panel space-y-6">
+        <div id="branding-gate" class="card hidden">
+          <div class="text-center py-8">
+            <i data-lucide="lock" class="w-10 h-10 mx-auto text-gray-600 mb-3"></i>
+            <p class="font-semibold">Branding requires Pro or Business plan</p>
+            <a href="../pricing.html" class="btn-primary inline-block mt-4">Upgrade Now</a>
+          </div>
+        </div>
+        <div id="branding-content" class="space-y-6 hidden">
+          <div class="card">
+            <h3 class="font-semibold mb-4">Logo & Colors</h3>
+            <div class="space-y-4">
+              <div>
+                <label class="text-xs text-gray-400 block mb-1">Logo URL</label>
+                <input id="branding-logo" type="url" class="input" placeholder="https://...">
+              </div>
+              <div class="grid grid-cols-2 gap-4">
+                <div>
+                  <label class="text-xs text-gray-400 block mb-1">Primary Color</label>
+                  <div class="flex gap-2">
+                    <input id="branding-primary-color" type="color" class="w-10 h-10 rounded border border-gray-700 cursor-pointer bg-transparent" value="#0ea5e9">
+                    <input id="branding-primary-color-hex" type="text" class="input" value="#0ea5e9">
+                  </div>
+                </div>
+                <div>
+                  <label class="text-xs text-gray-400 block mb-1">App Name</label>
+                  <input id="branding-app-name" type="text" class="input" placeholder="Globetrotter">
+                </div>
+              </div>
+              <button onclick="saveBranding()" class="btn-primary">Save Branding</button>
+              <button onclick="resetBranding()" class="btn-secondary ml-3">Reset to Default</button>
+            </div>
+          </div>
+
+          <div class="card" id="custom-domain-card">
+            <h3 class="font-semibold mb-4">Custom Domain <span class="text-xs bg-indigo-900 text-indigo-300 px-1.5 py-0.5 rounded ml-1">Business</span></h3>
+            <div class="space-y-3">
+              <div>
+                <label class="text-xs text-gray-400 block mb-1">Custom Domain</label>
+                <div class="flex gap-3">
+                  <input id="custom-domain" type="text" class="input" placeholder="trips.yourcompany.com">
+                  <button onclick="verifyDomain()" class="btn-secondary whitespace-nowrap">Verify Domain</button>
+                </div>
+              </div>
+              <div id="dns-instructions" class="hidden bg-gray-800 rounded-xl p-4 text-sm font-mono text-gray-300"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── SECURITY TAB ── -->
+      <div id="tab-security" class="tab-panel space-y-6">
+        <div class="card">
+          <h3 class="font-semibold mb-4">Change Password</h3>
+          <div class="space-y-3 max-w-sm">
+            <div>
+              <label class="text-xs text-gray-400 block mb-1">Current Password</label>
+              <input id="current-password" type="password" class="input">
+            </div>
+            <div>
+              <label class="text-xs text-gray-400 block mb-1">New Password</label>
+              <input id="new-password" type="password" class="input">
+            </div>
+            <div>
+              <label class="text-xs text-gray-400 block mb-1">Confirm New Password</label>
+              <input id="confirm-password" type="password" class="input">
+            </div>
+            <button onclick="changePassword()" class="btn-primary">Change Password</button>
+          </div>
+        </div>
+
+        <div class="card">
+          <h3 class="font-semibold mb-4">Permissions</h3>
+          <div id="permissions-info" class="text-sm text-gray-400">Loading...</div>
+        </div>
+
+        <div class="card">
+          <h3 class="font-semibold mb-4">Login History <span class="text-xs text-gray-500">(last 30 days)</span></h3>
+          <div id="login-history-list" class="space-y-2 text-sm text-gray-400">Loading...</div>
+        </div>
+
+        <div class="card">
+          <h3 class="font-semibold mb-4">Active Sessions</h3>
+          <p class="text-sm text-gray-400 mb-3">Sessions are JWT-based. Changing your password invalidates all sessions.</p>
+          <button onclick="logoutAll()" class="btn-secondary">Logout All Other Sessions</button>
+        </div>
+      </div>
+
+      <!-- ── DANGER ZONE TAB ── -->
+      <div id="tab-danger" class="tab-panel space-y-6">
+        <div class="card border-red-900">
+          <h3 class="font-semibold text-red-400 mb-6 flex items-center gap-2"><i data-lucide="alert-triangle" class="w-5 h-5"></i> Danger Zone</h3>
+
+          <div class="space-y-6">
+            <!-- Export -->
+            <div class="flex items-start justify-between gap-4">
+              <div>
+                <p class="font-medium">Export All Data</p>
+                <p class="text-sm text-gray-400 mt-1">Download all trips, expenses, members and settings.</p>
+              </div>
+              <div class="flex gap-2 shrink-0">
+                <button onclick="exportData('json')" class="btn-secondary">JSON</button>
+                <button onclick="exportData('csv')" class="btn-secondary">CSV</button>
+              </div>
+            </div>
+
+            <hr class="border-gray-800">
+
+            <!-- Archive -->
+            <div class="flex items-start justify-between gap-4">
+              <div>
+                <p class="font-medium">Archive Workspace</p>
+                <p class="text-sm text-gray-400 mt-1">Hide this workspace. You can unarchive it later.</p>
+              </div>
+              <button onclick="archiveWorkspace()" class="btn-danger">Archive</button>
+            </div>
+
+            <hr class="border-gray-800">
+
+            <!-- Delete -->
+            <div class="flex items-start justify-between gap-4">
+              <div>
+                <p class="font-medium text-red-400">Delete Workspace</p>
+                <p class="text-sm text-gray-400 mt-1">Permanently delete all trips, expenses and data. <strong>This cannot be undone.</strong></p>
+              </div>
+              <button onclick="deleteWorkspace()" class="btn-danger">Delete Workspace</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /max-w-4xl -->
+  </main>
+</div>
+
+<!-- Role Change Modal -->
+<div id="role-modal" class="fixed inset-0 bg-black/70 z-50 hidden flex items-center justify-center p-4">
+  <div class="bg-gray-900 border border-gray-700 rounded-2xl p-6 w-full max-w-sm space-y-4 shadow-2xl">
+    <h3 class="font-semibold">Change Role</h3>
+    <p id="role-modal-member" class="text-sm text-gray-400"></p>
+    <select id="role-modal-select" class="input">
+      <option value="admin">Admin</option>
+      <option value="editor">Editor</option>
+      <option value="viewer">Viewer</option>
+    </select>
+    <div class="flex gap-3 pt-2">
+      <button onclick="confirmRoleChange()" class="btn-primary flex-1">Change</button>
+      <button onclick="closeRoleModal()" class="btn-secondary flex-1">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- Confirm Modal -->
+<div id="confirm-modal" class="fixed inset-0 bg-black/70 z-50 hidden flex items-center justify-center p-4">
+  <div class="bg-gray-900 border border-gray-700 rounded-2xl p-6 w-full max-w-sm space-y-4 shadow-2xl">
+    <h3 id="confirm-title" class="font-semibold">Confirm</h3>
+    <p id="confirm-msg" class="text-sm text-gray-400"></p>
+    <input id="confirm-type-input" type="text" class="input hidden" placeholder="Type DELETE to confirm">
+    <div class="flex gap-3 pt-2">
+      <button id="confirm-ok-btn" onclick="confirmModalOk()" class="btn-danger flex-1">Confirm</button>
+      <button onclick="closeConfirmModal()" class="btn-secondary flex-1">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const API = '/api';
+let token = localStorage.getItem('token');
+let workspaceId = new URLSearchParams(location.search).get('ws') || localStorage.getItem('workspaceId');
+let currentUser = null;
+let currentRole = null;
+let pendingAction = null;
+let pendingMemberId = null;
+
+// ── Auth ─────────────────────────────────────────────────────────────────────
+async function handleLogin() {
+  const email = document.getElementById('login-email').value;
+  const password = document.getElementById('login-password').value;
+  const errEl = document.getElementById('login-error');
+  errEl.classList.add('hidden');
+  try {
+    const r = await fetch(`${API}/auth/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password })
+    });
+    const data = await r.json();
+    if (!r.ok) throw new Error(data.error?.message || 'Login failed');
+    token = data.accessToken || data.token;
+    localStorage.setItem('token', token);
+    if (data.workspaces?.[0]?.id && !workspaceId) {
+      workspaceId = data.workspaces[0].id;
+      localStorage.setItem('workspaceId', workspaceId);
+    }
+    await initApp();
+  } catch (e) {
+    errEl.textContent = e.message;
+    errEl.classList.remove('hidden');
+  }
+}
+
+function handleLogout() {
+  localStorage.removeItem('token');
+  location.reload();
+}
+
+async function authFetch(url, opts = {}) {
+  const r = await fetch(url, { ...opts, headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token, ...(opts.headers || {}) } });
+  if (r.status === 401) { handleLogout(); throw new Error('Unauthorized'); }
+  return r;
+}
+
+// ── Init ─────────────────────────────────────────────────────────────────────
+async function initApp() {
+  if (!token) return;
+
+  // Resolve workspace if not provided via URL
+  if (!workspaceId) {
+    try {
+      const r = await authFetch(`${API}/workspaces`);
+      const data = await r.json();
+      const list = Array.isArray(data) ? data : (data.workspaces || []);
+      if (list.length) { workspaceId = list[0].id; localStorage.setItem('workspaceId', workspaceId); }
+    } catch (_) {}
+  }
+
+  if (!workspaceId) {
+    showToast('No workspace found. Please create one first.', 'error');
+    return;
+  }
+
+  document.getElementById('auth-gate').classList.add('hidden');
+  document.getElementById('app').classList.remove('hidden');
+
+  await Promise.all([loadWorkspaceInfo(), loadPermissions(), loadAlerts()]);
+  lucide.createIcons();
+}
+
+// ── Workspace Info ────────────────────────────────────────────────────────────
+async function loadWorkspaceInfo() {
+  try {
+    const r = await authFetch(`${API}/workspaces/${workspaceId}`);
+    const data = await r.json();
+    const ws = data.workspace || data;
+
+    document.getElementById('sidebar-workspace-name').textContent = ws.name || 'Workspace';
+    document.getElementById('ws-name').value = ws.name || '';
+    document.getElementById('ws-description').value = ws.description || '';
+    document.getElementById('ws-created').textContent = ws.createdAt ? new Date(ws.createdAt).toLocaleDateString() : '—';
+
+    // Members
+    const members = data.members || [];
+    document.getElementById('ws-member-count').textContent = members.length;
+    renderMembers(members);
+
+    // Plan badge
+    const plan = ws.subscriptionPlan || 'starter';
+    const planColors = { starter: 'text-gray-400', pro: 'text-indigo-400', business: 'text-yellow-400' };
+    const planEl = document.getElementById('ws-plan');
+    planEl.textContent = plan.charAt(0).toUpperCase() + plan.slice(1);
+    planEl.className = `text-sm font-semibold ${planColors[plan] || 'text-gray-400'}`;
+    document.getElementById('sidebar-plan-badge').textContent = plan.charAt(0).toUpperCase() + plan.slice(1);
+
+    // Branding gate
+    if (['pro', 'business'].includes(plan)) {
+      document.getElementById('branding-content').classList.remove('hidden');
+    } else {
+      document.getElementById('branding-gate').classList.remove('hidden');
+    }
+
+    // Custom domain (Business only)
+    if (plan !== 'business') {
+      document.getElementById('custom-domain-card').style.opacity = '0.5';
+      document.getElementById('custom-domain').disabled = true;
+    }
+
+    await loadSubscription();
+    await loadInvitations();
+  } catch (e) {
+    showToast('Failed to load workspace info: ' + e.message, 'error');
+  }
+}
+
+async function loadPermissions() {
+  try {
+    const r = await authFetch(`${API}/workspaces/${workspaceId}/permissions`);
+    const data = await r.json();
+    currentRole = data.role;
+    document.getElementById('role-badge').textContent = data.role;
+    document.getElementById('user-email').textContent = currentUser?.email || '';
+
+    const permHtml = Object.entries(data.permissions || {}).map(([k, v]) =>
+      `<div class="flex items-center gap-2"><i data-lucide="${v ? 'check-circle' : 'x-circle'}" class="w-4 h-4 ${v ? 'text-green-400' : 'text-gray-600'}"></i><span>${k}</span></div>`
+    ).join('');
+    document.getElementById('permissions-info').innerHTML = permHtml || '—';
+    lucide.createIcons();
+  } catch (_) {}
+}
+
+async function loadAlerts() {
+  try {
+    const r = await authFetch(`${API}/workspaces/${workspaceId}/subscription`);
+    if (!r.ok) return;
+    const data = await r.json();
+    const alerts = [];
+    if (data.status === 'past_due') alerts.push('⚠️ Payment failed. <a href="#" onclick="openBillingPortal()" class="underline">Update payment method</a>');
+    if (data.status === 'trialing' && data.trialEndsAt) {
+      const days = Math.max(0, Math.round((new Date(data.trialEndsAt) - Date.now()) / 86400000));
+      if (days <= 3) alerts.push(`⏰ Trial ends in ${days} day(s). <a href="../pricing.html" class="underline">Upgrade now</a>`);
+    }
+    if (alerts.length) {
+      const zone = document.getElementById('alert-zone');
+      zone.innerHTML = alerts.join(' &bull; ');
+      zone.classList.remove('hidden');
+    }
+  } catch (_) {}
+}
+
+// ── Members ───────────────────────────────────────────────────────────────────
+function renderMembers(members) {
+  const tbody = document.getElementById('members-table-body');
+  const canManage = ['owner', 'admin'].includes(currentRole);
+
+  tbody.innerHTML = members.map(m => {
+    const roleBadgeColor = { owner: 'bg-purple-900 text-purple-300', admin: 'bg-blue-900 text-blue-300', editor: 'bg-green-900 text-green-300', viewer: 'bg-gray-700 text-gray-300' };
+    const joined = m.joinedAt ? new Date(m.joinedAt).toLocaleDateString() : '—';
+    const lastActive = m.lastActive ? new Date(m.lastActive).toLocaleDateString() : 'Never';
+    const actions = canManage && m.role !== 'owner' ? `
+      <button onclick="openRoleModal('${m.id}', '${m.name || m.email}', '${m.role}')" class="text-indigo-400 hover:text-indigo-300 mr-3 text-xs">Change Role</button>
+      <button onclick="removeMember('${m.id}')" class="text-red-400 hover:text-red-300 text-xs">Remove</button>
+    ` : '—';
+    return `<tr class="border-b border-gray-800">
+      <td class="py-3 pr-4"><div class="font-medium">${m.name || '—'}</div><div class="text-xs text-gray-500">${m.email}</div></td>
+      <td class="py-3 pr-4"><span class="role-badge ${roleBadgeColor[m.role] || 'bg-gray-700 text-gray-300'}">${m.role}</span></td>
+      <td class="py-3 pr-4 text-gray-400">${joined}</td>
+      <td class="py-3 pr-4 text-gray-400">${lastActive}</td>
+      <td class="py-3">${actions}</td>
+    </tr>`;
+  }).join('');
+}
+
+async function inviteMember() {
+  const email = document.getElementById('invite-email').value.trim();
+  const role = document.getElementById('invite-role').value;
+  const message = document.getElementById('invite-message').value.trim();
+  if (!email) return showToast('Email is required', 'error');
+
+  try {
+    const r = await authFetch(`${API}/workspaces/${workspaceId}/members/invite`, {
+      method: 'POST',
+      body: JSON.stringify({ email, role, message })
+    });
+    const data = await r.json();
+    if (!r.ok) throw new Error(data.error?.message || 'Failed to invite');
+    showToast(`Invitation sent to ${email}`);
+    document.getElementById('invite-email').value = '';
+    document.getElementById('invite-message').value = '';
+    await loadInvitations();
+  } catch (e) {
+    showToast(e.message, 'error');
+  }
+}
+
+async function removeMember(userId) {
+  openConfirm('Remove Member', 'Are you sure you want to remove this member?', async () => {
+    try {
+      const r = await authFetch(`${API}/workspaces/${workspaceId}/members/${userId}`, { method: 'DELETE' });
+      const data = await r.json();
+      if (!r.ok) throw new Error(data.error?.message || 'Failed to remove');
+      showToast('Member removed');
+      await loadWorkspaceInfo();
+    } catch (e) {
+      showToast(e.message, 'error');
+    }
+  });
+}
+
+async function loadInvitations() {
+  try {
+    const r = await authFetch(`${API}/workspaces/${workspaceId}/invitations`);
+    if (!r.ok) return;
+    const invites = await r.json();
+    const list = Array.isArray(invites) ? invites : (invites.invitations || []);
+
+    const empty = document.getElementById('invitations-empty');
+    const wrap = document.getElementById('invitations-table-wrap');
+    const tbody = document.getElementById('invitations-table-body');
+
+    if (!list.length) { empty.classList.remove('hidden'); wrap.classList.add('hidden'); return; }
+    empty.classList.add('hidden'); wrap.classList.remove('hidden');
+
+    tbody.innerHTML = list.map(inv => {
+      const invited = inv.createdAt ? new Date(inv.createdAt).toLocaleDateString() : '—';
+      const expires = inv.expiresAt ? Math.max(0, Math.round((new Date(inv.expiresAt) - Date.now()) / 86400000)) : '—';
+      return `<tr class="border-b border-gray-800">
+        <td class="py-3 pr-4">${inv.email}</td>
+        <td class="py-3 pr-4"><span class="role-badge bg-gray-700 text-gray-300">${inv.role}</span></td>
+        <td class="py-3 pr-4 text-gray-400">${invited}</td>
+        <td class="py-3">
+          <button onclick="resendInvite('${inv.id}')" class="text-indigo-400 hover:text-indigo-300 text-xs mr-3">Resend</button>
+          <button onclick="cancelInvite('${inv.id}')" class="text-red-400 hover:text-red-300 text-xs">Cancel</button>
+          <span class="text-xs text-gray-500 ml-3">Expires in ${expires}d</span>
+        </td>
+      </tr>`;
+    }).join('');
+  } catch (_) {}
+}
+
+async function resendInvite(inviteId) {
+  try {
+    const r = await authFetch(`${API}/workspaces/${workspaceId}/invitations/${inviteId}/resend`, { method: 'POST' });
+    const data = await r.json();
+    if (!r.ok) throw new Error(data.error?.message || 'Failed');
+    showToast('Invitation resent');
+  } catch (e) { showToast(e.message, 'error'); }
+}
+
+async function cancelInvite(inviteId) {
+  try {
+    const r = await authFetch(`${API}/workspaces/${workspaceId}/invitations/${inviteId}`, { method: 'DELETE' });
+    const data = await r.json();
+    if (!r.ok) throw new Error(data.error?.message || 'Failed');
+    showToast('Invitation cancelled');
+    await loadInvitations();
+  } catch (e) { showToast(e.message, 'error'); }
+}
+
+// ── Role Modal ────────────────────────────────────────────────────────────────
+function openRoleModal(userId, name, role) {
+  pendingMemberId = userId;
+  document.getElementById('role-modal-member').textContent = name;
+  document.getElementById('role-modal-select').value = role;
+  document.getElementById('role-modal').classList.remove('hidden');
+}
+function closeRoleModal() { document.getElementById('role-modal').classList.add('hidden'); pendingMemberId = null; }
+
+async function confirmRoleChange() {
+  if (!pendingMemberId) return;
+  const newRole = document.getElementById('role-modal-select').value;
+  try {
+    const r = await authFetch(`${API}/workspaces/${workspaceId}/members/${pendingMemberId}/role`, {
+      method: 'PATCH',
+      body: JSON.stringify({ role: newRole })
+    });
+    const data = await r.json();
+    if (!r.ok) throw new Error(data.error?.message || 'Failed');
+    showToast('Role updated');
+    closeRoleModal();
+    await loadWorkspaceInfo();
+  } catch (e) { showToast(e.message, 'error'); }
+}
+
+// ── General Settings ──────────────────────────────────────────────────────────
+async function saveGeneralSettings() {
+  const name = document.getElementById('ws-name').value.trim();
+  const description = document.getElementById('ws-description').value.trim();
+  if (!name) return showToast('Workspace name is required', 'error');
+  try {
+    const r = await authFetch(`${API}/workspaces/${workspaceId}`, {
+      method: 'PUT',
+      body: JSON.stringify({ name, description })
+    });
+    const data = await r.json();
+    if (!r.ok) throw new Error(data.error?.message || 'Failed to save');
+    showToast('Workspace settings saved');
+    document.getElementById('sidebar-workspace-name').textContent = name;
+  } catch (e) { showToast(e.message, 'error'); }
+}
+
+// ── Billing ───────────────────────────────────────────────────────────────────
+async function loadSubscription() {
+  try {
+    const r = await authFetch(`${API}/workspaces/${workspaceId}/subscription`);
+    if (!r.ok) return;
+    const data = await r.json();
+    document.getElementById('sub-plan').textContent = (data.plan || '—').toUpperCase();
+    const statusColor = { active: 'text-green-400', trialing: 'text-yellow-400', past_due: 'text-red-400', canceled: 'text-gray-500' };
+    document.getElementById('sub-status').innerHTML = `<span class="${statusColor[data.status] || 'text-gray-400'} font-medium">${data.status || '—'}</span>`;
+    document.getElementById('sub-renewal').textContent = data.currentPeriodEnd ? new Date(data.currentPeriodEnd).toLocaleDateString() : '—';
+    document.getElementById('sub-price').textContent = data.pricePerMonth ? `€${data.pricePerMonth}/mo` : 'Free';
+
+    // Usage
+    await loadUsage();
+    // Invoices
+    await loadInvoices();
+  } catch (_) {}
+}
+
+async function loadUsage() {
+  try {
+    const r = await authFetch(`${API}/workspaces/${workspaceId}/billing/usage`);
+    if (!r.ok) return;
+    const u = await r.json();
+    const fmt = (used, limit) => limit === -1 ? `${used} / ∞` : `${used} / ${limit}`;
+    document.getElementById('usage-info').innerHTML = `
+      <div id="usage-loading" class="hidden"></div>
+      <div class="flex justify-between border-b border-gray-800 pb-2"><span class="text-gray-400">Trips</span><span>${fmt(u.trips?.used, u.trips?.limit)}</span></div>
+      <div class="flex justify-between border-b border-gray-800 pb-2"><span class="text-gray-400">Team Members</span><span>${fmt(u.members?.used, u.members?.limit)}</span></div>
+      <div class="flex justify-between pb-2"><span class="text-gray-400">Storage</span><span>${u.storage?.total || 0} MB / ${u.storage?.limitMB || 100} MB</span></div>
+    `;
+  } catch (_) {}
+}
+
+async function loadInvoices() {
+  try {
+    const r = await authFetch(`${API}/workspaces/${workspaceId}/billing/invoices`);
+    if (!r.ok) return;
+    const invoices = await r.json();
+    const list = Array.isArray(invoices) ? invoices : [];
+    if (!list.length) return;
+    document.getElementById('invoices-empty').classList.add('hidden');
+    document.getElementById('invoices-table').classList.remove('hidden');
+    document.getElementById('invoices-table-body').innerHTML = list.map(inv => `
+      <tr class="border-b border-gray-800">
+        <td class="py-2 pr-4 text-gray-400">${inv.createdAt ? new Date(inv.createdAt).toLocaleDateString() : '—'}</td>
+        <td class="py-2 pr-4">€${inv.amount || '0.00'}</td>
+        <td class="py-2 pr-4"><span class="text-green-400">${inv.status || 'paid'}</span></td>
+        <td class="py-2">${inv.pdfUrl ? `<a href="${inv.pdfUrl}" target="_blank" class="text-indigo-400 hover:text-indigo-300 text-xs">Download</a>` : '—'}</td>
+      </tr>`).join('');
+  } catch (_) {}
+}
+
+async function openBillingPortal() {
+  try {
+    const r = await authFetch(`${API}/workspaces/${workspaceId}/billing/portal`);
+    const data = await r.json();
+    if (!r.ok) throw new Error(data.error?.message || 'Failed');
+    window.location.href = data.url;
+  } catch (e) { showToast(e.message, 'error'); }
+}
+
+async function cancelSubscription() {
+  openConfirm('Cancel Subscription', 'Are you sure you want to cancel your subscription? Your workspace will revert to the free plan.', async () => {
+    try {
+      const r = await authFetch(`${API}/workspaces/${workspaceId}/billing/cancel`, { method: 'POST' });
+      const data = await r.json();
+      if (!r.ok) throw new Error(data.error?.message || 'Failed');
+      showToast('Subscription cancelled');
+      await loadSubscription();
+    } catch (e) { showToast(e.message, 'error'); }
+  });
+}
+
+async function applyCoupon() {
+  const code = document.getElementById('coupon-input').value.trim();
+  if (!code) return showToast('Enter a coupon code', 'error');
+  try {
+    const r = await authFetch(`${API}/workspaces/${workspaceId}/billing/coupon`, {
+      method: 'POST',
+      body: JSON.stringify({ couponCode: code })
+    });
+    const data = await r.json();
+    if (!r.ok) throw new Error(data.error?.message || 'Invalid coupon');
+    showToast('Coupon applied!');
+    document.getElementById('coupon-input').value = '';
+  } catch (e) { showToast(e.message, 'error'); }
+}
+
+// ── Branding ──────────────────────────────────────────────────────────────────
+async function saveBranding() {
+  const logoUrl = document.getElementById('branding-logo').value.trim();
+  const accentColor = document.getElementById('branding-primary-color-hex').value.trim();
+  const appName = document.getElementById('branding-app-name').value.trim();
+  try {
+    const r = await authFetch(`${API}/workspaces/${workspaceId}/branding`, {
+      method: 'PUT',
+      body: JSON.stringify({ logoUrl, accentColor, appName })
+    });
+    const data = await r.json();
+    if (!r.ok) throw new Error(data.error?.message || 'Failed');
+    showToast('Branding saved');
+  } catch (e) { showToast(e.message, 'error'); }
+}
+
+async function resetBranding() {
+  try {
+    const r = await authFetch(`${API}/workspaces/${workspaceId}/branding`, {
+      method: 'PUT',
+      body: JSON.stringify({ logoUrl: null, accentColor: '#0ea5e9', appName: 'Globetrotter' })
+    });
+    const data = await r.json();
+    if (!r.ok) throw new Error(data.error?.message || 'Failed');
+    showToast('Branding reset to defaults');
+    document.getElementById('branding-primary-color').value = '#0ea5e9';
+    document.getElementById('branding-primary-color-hex').value = '#0ea5e9';
+    document.getElementById('branding-app-name').value = 'Globetrotter';
+    document.getElementById('branding-logo').value = '';
+  } catch (e) { showToast(e.message, 'error'); }
+}
+
+async function verifyDomain() {
+  const domain = document.getElementById('custom-domain').value.trim();
+  if (!domain) return showToast('Enter a domain', 'error');
+  try {
+    const r = await authFetch(`${API}/workspaces/${workspaceId}/branding/verify-domain`, {
+      method: 'POST',
+      body: JSON.stringify({ domain })
+    });
+    const data = await r.json();
+    if (!r.ok) throw new Error(data.error?.message || 'Failed');
+    const dnsEl = document.getElementById('dns-instructions');
+    const dns = await (await authFetch(`${API}/workspaces/${workspaceId}/branding/dns-setup`)).json();
+    dnsEl.textContent = `Add CNAME record:\nHost: ${dns.host}\nValue: ${dns.value}\nTTL: ${dns.ttl}`;
+    dnsEl.classList.remove('hidden');
+    showToast('Domain saved. DNS verification in progress.');
+  } catch (e) { showToast(e.message, 'error'); }
+}
+
+// ── Security ──────────────────────────────────────────────────────────────────
+async function changePassword() {
+  const current = document.getElementById('current-password').value;
+  const next = document.getElementById('new-password').value;
+  const confirm = document.getElementById('confirm-password').value;
+  if (!current || !next) return showToast('All password fields are required', 'error');
+  if (next !== confirm) return showToast('Passwords do not match', 'error');
+  try {
+    const r = await authFetch(`${API}/workspaces/${workspaceId}/security/change-password`, {
+      method: 'POST',
+      body: JSON.stringify({ currentPassword: current, newPassword: next })
+    });
+    const data = await r.json();
+    if (!r.ok) throw new Error(data.error?.message || 'Failed');
+    showToast('Password changed successfully');
+    document.getElementById('current-password').value = '';
+    document.getElementById('new-password').value = '';
+    document.getElementById('confirm-password').value = '';
+  } catch (e) { showToast(e.message, 'error'); }
+}
+
+async function loadSecurityTab() {
+  try {
+    const r = await authFetch(`${API}/workspaces/${workspaceId}/security/login-history`);
+    if (!r.ok) return;
+    const logs = await r.json();
+    const list = Array.isArray(logs) ? logs : [];
+    const el = document.getElementById('login-history-list');
+    if (!list.length) { el.textContent = 'No login history found.'; return; }
+    el.innerHTML = list.map(l => `
+      <div class="flex items-center justify-between border-b border-gray-800 py-2">
+        <div>
+          <span class="${l.action === 'login_failed' ? 'text-red-400' : 'text-green-400'} font-medium">${l.action === 'login_failed' ? 'Failed' : 'Success'}</span>
+          <span class="text-gray-500 ml-3">${l.ipAddress || 'Unknown IP'}</span>
+        </div>
+        <span class="text-gray-500 text-xs">${new Date(l.createdAt).toLocaleString()}</span>
+      </div>`).join('');
+  } catch (_) {}
+}
+
+async function logoutAll() {
+  try {
+    const r = await authFetch(`${API}/workspaces/${workspaceId}/security/sessions/logout-all`, { method: 'POST' });
+    const data = await r.json();
+    showToast(data.message || 'All sessions logged out');
+  } catch (e) { showToast(e.message, 'error'); }
+}
+
+// ── Danger Zone ───────────────────────────────────────────────────────────────
+async function archiveWorkspace() {
+  openConfirm('Archive Workspace', 'This will hide your workspace. You can unarchive it later.', async () => {
+    try {
+      const r = await authFetch(`${API}/workspaces/${workspaceId}/archive`, { method: 'POST' });
+      const data = await r.json();
+      if (!r.ok) throw new Error(data.error?.message || 'Failed');
+      showToast('Workspace archived');
+    } catch (e) { showToast(e.message, 'error'); }
+  });
+}
+
+async function deleteWorkspace() {
+  openConfirm('Delete Workspace', 'This is permanent. All trips, expenses and data will be deleted. Type DELETE to confirm.', async () => {
+    try {
+      const r = await authFetch(`${API}/workspaces/${workspaceId}`, { method: 'DELETE' });
+      const data = await r.json();
+      if (!r.ok) throw new Error(data.error?.message || 'Failed');
+      showToast('Workspace deleted');
+      localStorage.removeItem('workspaceId');
+      setTimeout(() => { location.href = '/'; }, 1500);
+    } catch (e) { showToast(e.message, 'error'); }
+  }, true);
+}
+
+async function exportData(format) {
+  try {
+    const r = await authFetch(`${API}/workspaces/${workspaceId}/export`, {
+      method: 'POST',
+      body: JSON.stringify({ format })
+    });
+    if (!r.ok) { const d = await r.json(); throw new Error(d.error?.message || 'Failed'); }
+    const blob = await r.blob();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `workspace-export.${format}`;
+    a.click();
+    URL.revokeObjectURL(url);
+    showToast(`Export started (${format.toUpperCase()})`);
+  } catch (e) { showToast(e.message, 'error'); }
+}
+
+// ── Confirm Modal ─────────────────────────────────────────────────────────────
+function openConfirm(title, msg, onOk, requireTyping = false) {
+  pendingAction = onOk;
+  document.getElementById('confirm-title').textContent = title;
+  document.getElementById('confirm-msg').textContent = msg;
+  const typeInput = document.getElementById('confirm-type-input');
+  typeInput.classList.toggle('hidden', !requireTyping);
+  typeInput.value = '';
+  document.getElementById('confirm-modal').classList.remove('hidden');
+}
+function closeConfirmModal() { document.getElementById('confirm-modal').classList.add('hidden'); pendingAction = null; }
+async function confirmModalOk() {
+  const typeInput = document.getElementById('confirm-type-input');
+  if (!typeInput.classList.contains('hidden') && typeInput.value !== 'DELETE') {
+    return showToast('Type DELETE to confirm', 'error');
+  }
+  const action = pendingAction;
+  closeConfirmModal();
+  if (action) await action();
+}
+
+// ── Tab Switching ─────────────────────────────────────────────────────────────
+function switchTab(tab) {
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  document.getElementById(`tab-${tab}`)?.classList.add('active');
+  document.getElementById('page-title').textContent = {
+    general: 'General Settings', members: 'Team Members', billing: 'Billing & Subscription',
+    branding: 'Branding', security: 'Security', danger: 'Danger Zone'
+  }[tab] || 'Workspace Settings';
+  if (tab === 'security') loadSecurityTab();
+  if (tab === 'billing') loadSubscription();
+}
+
+// ── Toast ─────────────────────────────────────────────────────────────────────
+function showToast(msg, type = 'success') {
+  const toast = document.getElementById('toast');
+  const icon = document.getElementById('toast-icon');
+  document.getElementById('toast-msg').textContent = msg;
+  icon.setAttribute('data-lucide', type === 'error' ? 'x-circle' : 'check-circle');
+  icon.className = `w-4 h-4 ${type === 'error' ? 'text-red-400' : 'text-green-400'}`;
+  toast.classList.remove('hidden');
+  lucide.createIcons();
+  setTimeout(() => toast.classList.add('hidden'), 3500);
+}
+
+// ── Color picker sync ─────────────────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', () => {
+  const picker = document.getElementById('branding-primary-color');
+  const hex = document.getElementById('branding-primary-color-hex');
+  if (picker && hex) {
+    picker.addEventListener('input', () => { hex.value = picker.value; });
+    hex.addEventListener('input', () => { if (/^#[0-9a-fA-F]{6}$/.test(hex.value)) picker.value = hex.value; });
+  }
+});
+
+// ── Boot ──────────────────────────────────────────────────────────────────────
+if (token) {
+  initApp();
+} else {
+  lucide.createIcons();
+}
+</script>
+</body>
+</html>

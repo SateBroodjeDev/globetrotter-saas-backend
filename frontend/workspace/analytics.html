@@ -1,0 +1,423 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full bg-gray-950">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Workspace Analytics – Globetrotter</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    body { font-family: system-ui, sans-serif; }
+    .card { @apply bg-gray-900 border border-gray-800 rounded-xl p-6; }
+    .kpi-card { @apply bg-gray-900 border border-gray-800 rounded-xl p-5; }
+    .sidebar-link { @apply flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm text-gray-400 hover:bg-gray-800 hover:text-white transition; }
+    .sidebar-link.active { @apply bg-indigo-600 text-white; }
+  </style>
+</head>
+<body class="h-full text-gray-100 bg-gray-950">
+
+<!-- Auth gate -->
+<div id="auth-gate" class="fixed inset-0 bg-gray-950 z-50 flex items-center justify-center p-4">
+  <div class="bg-gray-900 border border-gray-700 rounded-2xl p-8 w-full max-w-sm space-y-5 shadow-2xl">
+    <div class="text-center">
+      <div class="w-14 h-14 bg-indigo-600 rounded-xl flex items-center justify-center mx-auto mb-3">
+        <i data-lucide="bar-chart-2" class="w-7 h-7 text-white"></i>
+      </div>
+      <h1 class="text-xl font-bold">Workspace Analytics</h1>
+    </div>
+    <input id="login-email" type="email" placeholder="Email" class="w-full bg-gray-800 border border-gray-700 rounded-xl px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none">
+    <input id="login-password" type="password" placeholder="Password" class="w-full bg-gray-800 border border-gray-700 rounded-xl px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none">
+    <button onclick="handleLogin()" class="w-full py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold rounded-xl text-sm transition">Sign In</button>
+    <p id="login-error" class="text-xs text-red-400 text-center hidden"></p>
+  </div>
+</div>
+
+<!-- App shell -->
+<div id="app" class="hidden h-full flex">
+
+  <!-- Sidebar -->
+  <aside class="w-64 bg-gray-900 border-r border-gray-800 flex flex-col">
+    <div class="px-5 py-5 border-b border-gray-800">
+      <div class="flex items-center gap-3">
+        <div class="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center">
+          <i data-lucide="compass" class="w-4 h-4 text-white"></i>
+        </div>
+        <div>
+          <span class="font-bold text-sm block" id="sidebar-workspace-name">Workspace</span>
+          <span class="text-xs text-indigo-400" id="sidebar-plan">Starter</span>
+        </div>
+      </div>
+    </div>
+    <nav class="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
+      <a href="settings.html" class="sidebar-link"><i data-lucide="settings" class="w-4 h-4"></i> Settings</a>
+      <a href="#" class="sidebar-link active"><i data-lucide="bar-chart-2" class="w-4 h-4"></i> Analytics</a>
+    </nav>
+    <div class="px-3 py-4 border-t border-gray-800">
+      <button onclick="handleLogout()" class="sidebar-link w-full text-left text-red-400 hover:text-red-300 hover:bg-red-950">
+        <i data-lucide="log-out" class="w-4 h-4"></i> Logout
+      </button>
+    </div>
+  </aside>
+
+  <!-- Main content -->
+  <main class="flex-1 overflow-y-auto">
+    <header class="bg-gray-900 border-b border-gray-800 px-6 py-4 flex items-center justify-between sticky top-0 z-10">
+      <h2 class="font-semibold text-lg">Workspace Analytics</h2>
+      <div class="flex items-center gap-3">
+        <select id="date-range" onchange="loadAll()" class="bg-gray-800 border border-gray-700 rounded-lg px-3 py-1.5 text-sm focus:outline-none">
+          <option value="7">Last 7 days</option>
+          <option value="30" selected>Last 30 days</option>
+          <option value="90">Last 90 days</option>
+        </select>
+        <button onclick="exportReport()" class="bg-gray-700 hover:bg-gray-600 text-white text-sm font-medium px-3 py-1.5 rounded-lg transition">Export CSV</button>
+      </div>
+    </header>
+
+    <!-- Toast -->
+    <div id="toast" class="fixed top-5 right-5 z-50 hidden">
+      <div id="toast-inner" class="flex items-center gap-3 bg-gray-800 border border-gray-700 rounded-xl px-4 py-3 shadow-2xl text-sm">
+        <i id="toast-icon" data-lucide="check-circle" class="w-4 h-4 text-green-400"></i>
+        <span id="toast-msg"></span>
+      </div>
+    </div>
+
+    <div class="p-6 space-y-6">
+
+      <!-- KPI Cards -->
+      <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <div class="kpi-card">
+          <p class="text-xs text-gray-400">Total Trips</p>
+          <p id="kpi-trips" class="text-3xl font-bold mt-1">—</p>
+        </div>
+        <div class="kpi-card">
+          <p class="text-xs text-gray-400">Total Expenses</p>
+          <p id="kpi-expenses" class="text-3xl font-bold mt-1">—</p>
+        </div>
+        <div class="kpi-card">
+          <p class="text-xs text-gray-400">Active Members</p>
+          <p id="kpi-members" class="text-3xl font-bold mt-1">—</p>
+        </div>
+        <div class="kpi-card">
+          <p class="text-xs text-gray-400">Storage Used</p>
+          <p id="kpi-storage" class="text-3xl font-bold mt-1 text-indigo-400">—</p>
+        </div>
+      </div>
+
+      <!-- Charts row -->
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div class="card">
+          <h3 class="font-semibold mb-4">Trips Created Per Day</h3>
+          <canvas id="trips-chart" height="200"></canvas>
+        </div>
+        <div class="card">
+          <h3 class="font-semibold mb-4">Members by Role</h3>
+          <canvas id="roles-chart" height="200"></canvas>
+        </div>
+      </div>
+
+      <!-- Members Table -->
+      <div class="card">
+        <div class="flex items-center justify-between mb-4">
+          <h3 class="font-semibold">Member Activity</h3>
+          <span id="inactive-count" class="text-xs text-yellow-400"></span>
+        </div>
+        <div class="overflow-x-auto">
+          <table class="w-full text-sm">
+            <thead>
+              <tr class="text-gray-400 border-b border-gray-800">
+                <th class="text-left py-2 pr-4">Member</th>
+                <th class="text-left py-2 pr-4">Role</th>
+                <th class="text-left py-2 pr-4">Joined</th>
+                <th class="text-left py-2 pr-4">Last Active</th>
+                <th class="text-left py-2">Status</th>
+              </tr>
+            </thead>
+            <tbody id="members-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Storage Breakdown -->
+      <div class="card">
+        <h3 class="font-semibold mb-4">Storage Breakdown</h3>
+        <div id="storage-info" class="space-y-3 text-sm">
+          <div class="flex justify-between border-b border-gray-800 pb-2">
+            <span class="text-gray-400">Trips Data</span>
+            <span id="storage-trips">—</span>
+          </div>
+          <div class="flex justify-between border-b border-gray-800 pb-2">
+            <span class="text-gray-400">Expenses Data</span>
+            <span id="storage-expenses">—</span>
+          </div>
+          <div class="flex justify-between pb-2">
+            <span class="text-gray-400">Total Used / Limit</span>
+            <span id="storage-total" class="font-semibold"></span>
+          </div>
+          <!-- Progress bar -->
+          <div class="w-full bg-gray-800 rounded-full h-2">
+            <div id="storage-bar" class="bg-indigo-600 h-2 rounded-full transition-all" style="width:0%"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Recent Activity -->
+      <div class="card">
+        <h3 class="font-semibold mb-4">Recent Activity</h3>
+        <div id="activity-list" class="space-y-2 text-sm text-gray-400">
+          <p>Loading...</p>
+        </div>
+      </div>
+
+    </div>
+  </main>
+</div>
+
+<script>
+const API = '/api';
+let token = localStorage.getItem('token');
+let workspaceId = new URLSearchParams(location.search).get('ws') || localStorage.getItem('workspaceId');
+let tripsChart = null;
+let rolesChart = null;
+
+async function handleLogin() {
+  const email = document.getElementById('login-email').value;
+  const password = document.getElementById('login-password').value;
+  const errEl = document.getElementById('login-error');
+  errEl.classList.add('hidden');
+  try {
+    const r = await fetch(`${API}/auth/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password })
+    });
+    const data = await r.json();
+    if (!r.ok) throw new Error(data.error?.message || 'Login failed');
+    token = data.accessToken || data.token;
+    localStorage.setItem('token', token);
+    if (data.workspaces?.[0]?.id && !workspaceId) {
+      workspaceId = data.workspaces[0].id;
+      localStorage.setItem('workspaceId', workspaceId);
+    }
+    await initApp();
+  } catch (e) {
+    errEl.textContent = e.message;
+    errEl.classList.remove('hidden');
+  }
+}
+
+function handleLogout() {
+  localStorage.removeItem('token');
+  location.reload();
+}
+
+async function authFetch(url, opts = {}) {
+  const r = await fetch(url, { ...opts, headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token, ...(opts.headers || {}) } });
+  if (r.status === 401) { handleLogout(); throw new Error('Unauthorized'); }
+  return r;
+}
+
+async function initApp() {
+  if (!token) return;
+
+  if (!workspaceId) {
+    try {
+      const r = await authFetch(`${API}/workspaces`);
+      const data = await r.json();
+      const list = Array.isArray(data) ? data : (data.workspaces || []);
+      if (list.length) { workspaceId = list[0].id; localStorage.setItem('workspaceId', workspaceId); }
+    } catch (_) {}
+  }
+
+  if (!workspaceId) {
+    showToast('No workspace found.', 'error');
+    return;
+  }
+
+  document.getElementById('auth-gate').classList.add('hidden');
+  document.getElementById('app').classList.remove('hidden');
+  lucide.createIcons();
+  await loadAll();
+}
+
+async function loadAll() {
+  const days = parseInt(document.getElementById('date-range')?.value || 30);
+  await Promise.all([
+    loadMetrics(),
+    loadTrends(days),
+    loadMemberAnalytics(),
+    loadStorage(),
+    loadActivity()
+  ]);
+}
+
+async function loadMetrics() {
+  try {
+    const r = await authFetch(`${API}/workspaces/${workspaceId}/analytics`);
+    if (!r.ok) return;
+    const data = await r.json();
+    document.getElementById('kpi-trips').textContent = data.trips?.total ?? '—';
+    document.getElementById('kpi-expenses').textContent = data.expenses?.total ?? '—';
+    document.getElementById('kpi-members').textContent = data.members?.total ?? '—';
+    document.getElementById('sidebar-workspace-name').textContent = data.workspace?.name || 'Workspace';
+    document.getElementById('sidebar-plan').textContent = (data.plan || 'starter').charAt(0).toUpperCase() + (data.plan || 'starter').slice(1);
+  } catch (_) {}
+}
+
+async function loadTrends(days) {
+  try {
+    const r = await authFetch(`${API}/workspaces/${workspaceId}/analytics/trends?days=${days}`);
+    if (!r.ok) return;
+    const data = await r.json();
+
+    const labels = (data.tripsPerDay || []).map(d => d.date);
+    const values = (data.tripsPerDay || []).map(d => d.count);
+
+    const ctx = document.getElementById('trips-chart').getContext('2d');
+    if (tripsChart) tripsChart.destroy();
+    tripsChart = new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels,
+        datasets: [{
+          label: 'Trips Created',
+          data: values,
+          borderColor: '#6366f1',
+          backgroundColor: 'rgba(99,102,241,0.1)',
+          tension: 0.4,
+          fill: true,
+          pointBackgroundColor: '#6366f1'
+        }]
+      },
+      options: {
+        responsive: true,
+        plugins: { legend: { labels: { color: '#9ca3af' } } },
+        scales: {
+          x: { ticks: { color: '#6b7280' }, grid: { color: '#1f2937' } },
+          y: { ticks: { color: '#6b7280', stepSize: 1 }, grid: { color: '#1f2937' }, beginAtZero: true }
+        }
+      }
+    });
+  } catch (_) {}
+}
+
+async function loadMemberAnalytics() {
+  try {
+    const r = await authFetch(`${API}/workspaces/${workspaceId}/analytics/members`);
+    if (!r.ok) return;
+    const data = await r.json();
+
+    // Role chart
+    const roleColors = { owner: '#7c3aed', admin: '#3b82f6', editor: '#22c55e', viewer: '#6b7280' };
+    const roles = Object.keys(data.byRole || {});
+    const roleCounts = roles.map(k => data.byRole[k]);
+    const ctx = document.getElementById('roles-chart').getContext('2d');
+    if (rolesChart) rolesChart.destroy();
+    rolesChart = new Chart(ctx, {
+      type: 'doughnut',
+      data: {
+        labels: roles.map(r => r.charAt(0).toUpperCase() + r.slice(1)),
+        datasets: [{ data: roleCounts, backgroundColor: roles.map(r => roleColors[r] || '#6b7280'), borderWidth: 0 }]
+      },
+      options: {
+        responsive: true,
+        plugins: { legend: { labels: { color: '#9ca3af' } } }
+      }
+    });
+
+    // Members table
+    const inactive = data.inactive || 0;
+    if (inactive) document.getElementById('inactive-count').textContent = `${inactive} inactive (>30 days)`;
+
+    const roleBadgeColor = { owner: 'bg-purple-900 text-purple-300', admin: 'bg-blue-900 text-blue-300', editor: 'bg-green-900 text-green-300', viewer: 'bg-gray-700 text-gray-300' };
+    document.getElementById('members-tbody').innerHTML = (data.members || []).map(m => `
+      <tr class="border-b border-gray-800">
+        <td class="py-3 pr-4">
+          <div class="font-medium">${m.name || '—'}</div>
+          <div class="text-xs text-gray-500">${m.email || ''}</div>
+        </td>
+        <td class="py-3 pr-4"><span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold ${roleBadgeColor[m.role] || 'bg-gray-700 text-gray-300'}">${m.role}</span></td>
+        <td class="py-3 pr-4 text-gray-400">${m.joinedAt ? new Date(m.joinedAt).toLocaleDateString() : '—'}</td>
+        <td class="py-3 pr-4 text-gray-400">${m.lastActive ? new Date(m.lastActive).toLocaleDateString() : 'Never'}</td>
+        <td class="py-3"><span class="text-xs px-2 py-0.5 rounded-full ${m.inactive ? 'bg-yellow-900 text-yellow-300' : 'bg-green-900 text-green-300'}">${m.inactive ? 'Inactive' : 'Active'}</span></td>
+      </tr>`).join('');
+  } catch (_) {}
+}
+
+async function loadStorage() {
+  try {
+    const r = await authFetch(`${API}/workspaces/${workspaceId}/analytics/storage`);
+    if (!r.ok) return;
+    const s = await r.json();
+    document.getElementById('storage-trips').textContent = `${s.trips} MB`;
+    document.getElementById('storage-expenses').textContent = `${s.expenses} MB`;
+    document.getElementById('storage-total').textContent = `${s.total} MB / ${s.limitMB} MB`;
+    document.getElementById('kpi-storage').textContent = `${s.total} MB`;
+    const pct = s.limitMB > 0 ? Math.min(100, Math.round(s.total / s.limitMB * 100)) : 0;
+    const bar = document.getElementById('storage-bar');
+    bar.style.width = pct + '%';
+    bar.className = `h-2 rounded-full transition-all ${pct > 90 ? 'bg-red-500' : pct > 70 ? 'bg-yellow-500' : 'bg-indigo-600'}`;
+  } catch (_) {}
+}
+
+async function loadActivity() {
+  try {
+    const r = await authFetch(`${API}/workspaces/${workspaceId}/analytics/activity?limit=10`);
+    if (!r.ok) return;
+    const logs = await r.json();
+    const list = Array.isArray(logs) ? logs : [];
+    const el = document.getElementById('activity-list');
+    if (!list.length) { el.textContent = 'No recent activity.'; return; }
+    el.innerHTML = list.map(l => `
+      <div class="flex items-center justify-between border-b border-gray-800 py-2">
+        <div class="flex items-center gap-3">
+          <i data-lucide="activity" class="w-4 h-4 text-indigo-400 shrink-0"></i>
+          <div>
+            <span class="text-white font-medium">${l.actor}</span>
+            <span class="text-gray-400 ml-2">${l.action.replace(/_/g, ' ')}</span>
+            ${l.resourceId ? `<span class="text-gray-600 ml-1 text-xs">(${l.resource})</span>` : ''}
+          </div>
+        </div>
+        <span class="text-gray-500 text-xs whitespace-nowrap ml-4">${new Date(l.createdAt).toLocaleString()}</span>
+      </div>`).join('');
+    lucide.createIcons();
+  } catch (_) {}
+}
+
+async function exportReport() {
+  try {
+    const r = await authFetch(`${API}/workspaces/${workspaceId}/export`, {
+      method: 'POST',
+      body: JSON.stringify({ format: 'csv' })
+    });
+    if (!r.ok) { const d = await r.json(); throw new Error(d.error?.message || 'Failed'); }
+    const blob = await r.blob();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'workspace-analytics.csv';
+    a.click();
+    URL.revokeObjectURL(url);
+    showToast('Export downloaded');
+  } catch (e) { showToast(e.message, 'error'); }
+}
+
+function showToast(msg, type = 'success') {
+  const toast = document.getElementById('toast');
+  document.getElementById('toast-msg').textContent = msg;
+  const icon = document.getElementById('toast-icon');
+  icon.setAttribute('data-lucide', type === 'error' ? 'x-circle' : 'check-circle');
+  icon.className = `w-4 h-4 ${type === 'error' ? 'text-red-400' : 'text-green-400'}`;
+  toast.classList.remove('hidden');
+  lucide.createIcons();
+  setTimeout(() => toast.classList.add('hidden'), 3500);
+}
+
+if (token) {
+  initApp();
+} else {
+  lucide.createIcons();
+}
+</script>
+</body>
+</html>
