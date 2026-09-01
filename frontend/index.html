@@ -3,489 +3,194 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Globetrotter SaaS - Multi-Tenant Travel Planner</title>
-    <meta name="theme-color" content="#0f172a">
-    <meta name="mobile-web-app-capable" content="yes">
-    <meta name="description" content="Multi-tenant SaaS reisplanner met kostenverdeling en RBAC">
+    <title>Globetrotter SaaS - Production</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <script>tailwind.config = {theme: {extend: {colors: {brand: {500: '#0ea5e9', 600: '#0284c7'}}}}}</script>
     <script src="https://unpkg.com/lucide@latest"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap');
-        body { font-family: 'Plus Jakarta Sans', sans-serif; -webkit-tap-highlight-color: transparent; }
-        .tab-content { display: none; } .tab-content.active { display: block; animation: fadeIn 0.2s; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; } }
-        .glass-card { background: rgba(30,41,59,0.75); backdrop-filter: blur(14px); border: 1px solid rgba(255,255,255,0.08); }
-        .loading { display: inline-block; width: 20px; height: 20px; border: 3px solid rgba(14,165,233,0.3); border-top-color: #0ea5e9; border-radius: 50%; animation: spin 1s infinite; }
-        @keyframes spin { to { transform: rotate(360deg); } }
+        body { font-family: 'Plus Jakarta Sans', sans-serif; }
+        .glass-card { background: rgba(30, 41, 59, 0.75); backdrop-filter: blur(14px); border: 1px solid rgba(255, 255, 255, 0.08); }
+        .tab-content { display: none; } .tab-content.active { display: block; animation: fadeIn 0.2s ease-in-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
     </style>
 </head>
-<body class="h-full text-slate-100 flex flex-col bg-slate-950 pb-20 md:pb-6">
+<body class="h-full text-slate-100 flex flex-col bg-slate-950">
 
     <!-- AUTH SCREEN -->
     <div id="auth-screen" class="fixed inset-0 bg-slate-950 z-50 flex items-center justify-center p-4">
         <div class="glass-card bg-slate-900 border border-slate-700 rounded-3xl p-8 max-w-md w-full shadow-2xl space-y-6">
             <div class="text-center">
-                <div class="p-3.5 bg-gradient-to-tr from-sky-600 to-indigo-600 rounded-2xl text-white flex items-center justify-center mx-auto mb-4 w-16 h-16">
+                <div class="p-3.5 bg-gradient-to-tr from-sky-600 to-indigo-600 rounded-2xl shadow-lg shadow-sky-500/20 text-white flex items-center justify-center mx-auto mb-4 w-16 h-16">
                     <i data-lucide="compass" class="w-8 h-8"></i>
                 </div>
                 <h1 class="text-2xl font-extrabold text-white">Globetrotter</h1>
-                <p class="text-xs text-slate-400 mt-1">Multi-Tenant SaaS</p>
+                <p class="text-xs text-slate-400 mt-1">Enterprise SaaS Travel Planner</p>
             </div>
 
             <div id="login-form" class="space-y-4">
-                <div>
-                    <label class="block text-slate-400 text-xs mb-2">Email</label>
-                    <input type="email" id="auth-email" placeholder="demo@example.com" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-white text-sm focus:border-sky-500 focus:outline-none">
-                </div>
-                <div>
-                    <label class="block text-slate-400 text-xs mb-2">Wachtwoord</label>
-                    <input type="password" id="auth-password" placeholder="••••••••" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-white text-sm focus:border-sky-500 focus:outline-none">
-                </div>
+                <input type="email" id="auth-email" placeholder="Email" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-white text-sm focus:border-sky-500 focus:outline-none">
+                <input type="password" id="auth-password" placeholder="Wachtwoord" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-white text-sm focus:border-sky-500 focus:outline-none">
                 <button onclick="handleLogin()" class="w-full py-2.5 bg-gradient-to-r from-sky-600 to-indigo-600 hover:from-sky-500 hover:to-indigo-500 text-white font-bold rounded-xl text-sm transition">
-                    <span id="login-btn-text">Inloggen</span>
+                    <span id="login-btn">Inloggen</span>
                 </button>
-                <button onclick="switchAuthMode('register')" class="w-full py-2 text-sky-400 text-xs hover:text-sky-300">Nog geen account? Registreer</button>
+                <p id="auth-error" class="text-xs text-rose-400 text-center hidden"></p>
             </div>
-
-            <div id="register-form" class="space-y-4 hidden">
-                <div class="grid grid-cols-2 gap-2">
-                    <input type="text" id="reg-firstname" placeholder="Voornaam" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-white text-xs focus:border-sky-500 focus:outline-none">
-                    <input type="text" id="reg-lastname" placeholder="Achternaam" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-white text-xs focus:border-sky-500 focus:outline-none">
-                </div>
-                <input type="email" id="reg-email" placeholder="Email" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-white text-sm focus:border-sky-500 focus:outline-none">
-                <input type="password" id="reg-password" placeholder="Min. 8 tekens" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-white text-sm focus:border-sky-500 focus:outline-none">
-                <button onclick="handleRegister()" class="w-full py-2.5 bg-gradient-to-r from-emerald-600 to-teal-600 text-white font-bold rounded-xl text-sm transition">
-                    <span id="register-btn-text">Account aanmaken</span>
-                </button>
-                <button onclick="switchAuthMode('login')" class="w-full py-2 text-sky-400 text-xs hover:text-sky-300">Terug naar inloggen</button>
-            </div>
-
-            <div id="auth-error" class="text-xs text-rose-400 text-center hidden"></div>
         </div>
     </div>
 
-    <!-- HEADER -->
-    <header id="header" class="bg-slate-900/90 border-b border-slate-800 sticky top-0 z-40 backdrop-blur-md hidden">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="flex items-center justify-between h-16">
-                <div class="flex items-center space-x-3">
-                    <div class="p-2.5 bg-gradient-to-tr from-sky-600 to-indigo-600 rounded-xl text-white flex items-center justify-center">
-                        <i data-lucide="compass" class="w-6 h-6"></i>
-                    </div>
-                    <div>
-                        <div class="flex items-center gap-2">
-                            <span class="font-extrabold text-sm sm:text-base text-white">Globetrotter</span>
-                            <select id="trip-selector" onchange="switchTrip(this.value)" class="bg-slate-800 border border-slate-700 text-white text-xs rounded-lg px-2.5 py-1 focus:outline-none"></select>
-                            <button onclick="openAddTripModal()" class="p-1.5 bg-sky-600 hover:bg-sky-500 text-white rounded-lg text-xs font-semibold flex items-center gap-1">
-                                <i data-lucide="plus" class="w-3.5 h-3.5"></i>
-                            </button>
+    <!-- MAIN APP -->
+    <div id="app" class="hidden flex-grow flex flex-col">
+        <!-- Header -->
+        <header class="bg-slate-900/90 border-b border-slate-800 sticky top-0 z-40 backdrop-blur-md">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="flex items-center justify-between h-16">
+                    <div class="flex items-center space-x-3">
+                        <div class="p-2.5 bg-gradient-to-tr from-sky-600 to-indigo-600 rounded-xl text-white">
+                            <i data-lucide="compass" class="w-6 h-6"></i>
+                        </div>
+                        <div>
+                            <h1 class="font-extrabold text-base text-white">Globetrotter</h1>
+                            <p class="text-[11px] text-slate-400">Multi-Tenant SaaS</p>
                         </div>
                     </div>
-                </div>
-                <div class="flex items-center space-x-3">
-                    <span id="countdown-text" class="text-sky-300 text-xs font-mono">Laden...</span>
-                    <button onclick="handleLogout()" class="px-2 py-1 bg-rose-900/60 hover:bg-rose-800/60 text-rose-300 rounded text-xs">
-                        <i data-lucide="log-out" class="w-4 h-4"></i>
+                    <button onclick="handleLogout()" class="px-3 py-1.5 bg-rose-900/60 hover:bg-rose-800/60 text-rose-300 rounded border border-rose-700/60 transition flex items-center gap-1 text-xs">
+                        <i data-lucide="log-out" class="w-3 h-3"></i> Logout
                     </button>
                 </div>
             </div>
-            <nav class="hidden md:flex space-x-1 pb-2 text-xs font-semibold border-t border-slate-800/80 pt-2">
-                <button onclick="switchTab('dashboard')" class="tab-btn px-3 py-2 rounded-lg flex items-center gap-2 bg-sky-600 text-white">
-                    <i data-lucide="layout-dashboard" class="w-4 h-4"></i> Dashboard
-                </button>
-                <button onclick="switchTab('trips')" class="tab-btn px-3 py-2 rounded-lg flex items-center gap-2 text-slate-400 hover:text-white hover:bg-slate-800">
-                    <i data-lucide="map" class="w-4 h-4"></i> Reizen
-                </button>
-                <button onclick="switchTab('expenses')" class="tab-btn px-3 py-2 rounded-lg flex items-center gap-2 text-slate-400 hover:text-white hover:bg-slate-800">
-                    <i data-lucide="credit-card" class="w-4 h-4"></i> Uitgaven
-                </button>
-                <button onclick="switchTab('settlement')" class="tab-btn px-3 py-2 rounded-lg flex items-center gap-2 text-slate-400 hover:text-white hover:bg-slate-800">
-                    <i data-lucide="send" class="w-4 h-4"></i> Verrekening
-                </button>
-                <button onclick="switchTab('members')" class="tab-btn px-3 py-2 rounded-lg flex items-center gap-2 text-slate-400 hover:text-white hover:bg-slate-800">
-                    <i data-lucide="users" class="w-4 h-4"></i> Leden
-                </button>
-            </nav>
-        </div>
-    </header>
+        </header>
 
-    <!-- MAIN CONTENT -->
-    <main id="main-content" class="flex-grow max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 hidden">
-        <!-- Dashboard Tab -->
-        <div id="tab-dashboard" class="tab-content active space-y-6">
-            <div class="bg-gradient-to-r from-sky-950/60 to-slate-900/80 border border-sky-500/20 rounded-2xl p-5 space-y-4">
-                <h2 class="text-xl font-bold text-white" id="dash-title">Welkom</h2>
-                <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
-                    <div class="glass-card rounded-xl p-4 text-center">
-                        <p class="text-2xl font-bold text-sky-400" id="stat-trips">0</p>
-                        <p class="text-xs text-slate-400">Reizen</p>
-                    </div>
-                    <div class="glass-card rounded-xl p-4 text-center">
-                        <p class="text-2xl font-bold text-emerald-400" id="stat-total">€0</p>
-                        <p class="text-xs text-slate-400">Totaal kosten</p>
-                    </div>
-                    <div class="glass-card rounded-xl p-4 text-center">
-                        <p class="text-2xl font-bold text-purple-400" id="stat-members">0</p>
-                        <p class="text-xs text-slate-400">Leden</p>
-                    </div>
-                    <div class="glass-card rounded-xl p-4 text-center">
-                        <p class="text-2xl font-bold text-amber-400" id="stat-role">-</p>
-                        <p class="text-xs text-slate-400">Mijn rol</p>
-                    </div>
+        <!-- Main Content -->
+        <main class="flex-grow max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6">
+            <!-- Dashboard -->
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <div class="glass-card rounded-2xl p-5 space-y-3">
+                    <h3 class="text-sm font-bold text-white">📊 Total Trips</h3>
+                    <p class="text-2xl font-bold text-sky-400" id="total-trips">-</p>
+                </div>
+                <div class="glass-card rounded-2xl p-5 space-y-3">
+                    <h3 class="text-sm font-bold text-white">💰 Total Expenses</h3>
+                    <p class="text-2xl font-bold text-emerald-400" id="total-expenses">€-</p>
+                </div>
+                <div class="glass-card rounded-2xl p-5 space-y-3">
+                    <h3 class="text-sm font-bold text-white">👥 Workspace Members</h3>
+                    <p class="text-2xl font-bold text-amber-400" id="workspace-members">-</p>
                 </div>
             </div>
 
-            <div class="glass-card rounded-2xl p-5 space-y-4">
-                <h3 class="text-sm font-bold text-white flex items-center gap-2">
-                    <i data-lucide="pie-chart" class="w-4 h-4 text-sky-400"></i> Uitgaven per Categorie
-                </h3>
-                <canvas id="dashboardChart" class="h-64"></canvas>
-            </div>
-        </div>
-
-        <!-- Trips Tab -->
-        <div id="tab-trips" class="tab-content space-y-4">
-            <button onclick="openAddTripModal()" class="px-4 py-2 bg-sky-600 hover:bg-sky-500 text-white rounded-xl text-sm font-semibold flex items-center gap-2">
-                <i data-lucide="plus" class="w-4 h-4"></i> Nieuwe Reis
-            </button>
-            <div id="trips-list" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                <div class="glass-card rounded-xl p-4 text-center">
-                    <p class="text-slate-400 text-sm">Geen reizen</p>
+            <div class="mt-6 glass-card rounded-2xl p-5">
+                <h2 class="text-base font-bold text-white mb-4">Your Trips</h2>
+                <div id="trips-list" class="space-y-2">
+                    <p class="text-xs text-slate-400">Loading...</p>
                 </div>
             </div>
-        </div>
-
-        <!-- Expenses Tab -->
-        <div id="tab-expenses" class="tab-content space-y-4">
-            <button onclick="openAddExpenseModal()" class="px-4 py-2 bg-sky-600 hover:bg-sky-500 text-white rounded-xl text-sm font-semibold flex items-center gap-2">
-                <i data-lucide="plus" class="w-4 h-4"></i> Uitgave Toevoegen
-            </button>
-            <div class="glass-card rounded-2xl overflow-hidden border border-slate-800">
-                <div class="overflow-x-auto">
-                    <table class="w-full text-xs text-left text-slate-300">
-                        <thead class="bg-slate-900/90 text-slate-400 uppercase font-semibold border-b border-slate-800">
-                            <tr>
-                                <th class="p-3">Omschrijving</th>
-                                <th class="p-3">Categorie</th>
-                                <th class="p-3 text-right">Bedrag</th>
-                                <th class="p-3">Betaald door</th>
-                            </tr>
-                        </thead>
-                        <tbody id="expenses-tbody" class="divide-y divide-slate-800/60">
-                            <tr><td colspan="4" class="p-4 text-center text-slate-400">Geen uitgaven</td></tr>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
-
-        <!-- Settlement Tab -->
-        <div id="tab-settlement" class="tab-content space-y-4">
-            <div class="glass-card p-6 rounded-2xl border border-sky-500/20 space-y-4">
-                <h3 class="text-sm font-bold text-white flex items-center gap-2">
-                    <i data-lucide="send" class="w-4 h-4 text-amber-400"></i> Voorgestelde Betalingen
-                </h3>
-                <div id="settlement-container" class="grid grid-cols-1 gap-3">
-                    <p class="text-xs text-slate-400">Laden...</p>
-                </div>
-            </div>
-        </div>
-
-        <!-- Members Tab -->
-        <div id="tab-members" class="tab-content space-y-4">
-            <button onclick="openInviteMemberModal()" class="px-4 py-2 bg-sky-600 hover:bg-sky-500 text-white rounded-xl text-sm font-semibold flex items-center gap-2">
-                <i data-lucide="user-plus" class="w-4 h-4"></i> Lid Uitnodigen
-            </button>
-            <div id="members-list" class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div class="glass-card rounded-xl p-4 text-center">
-                    <p class="text-slate-400 text-sm">Geen leden</p>
-                </div>
-            </div>
-        </div>
-    </main>
-
-    <!-- MODAL -->
-    <div id="app-modal" class="fixed inset-0 bg-slate-950/80 z-50 flex items-center justify-center p-4 hidden">
-        <div class="glass-card bg-slate-900 border border-slate-700 rounded-2xl max-w-lg w-full p-6 space-y-4 shadow-2xl max-h-[90vh] overflow-y-auto">
-            <div class="flex justify-between items-center border-b border-slate-800 pb-3">
-                <h3 id="modal-title" class="font-bold text-base text-white">Modal</h3>
-                <button onclick="closeModal()" class="text-slate-400 hover:text-white">
-                    <i data-lucide="x" class="w-5 h-5"></i>
-                </button>
-            </div>
-            <div id="modal-body" class="space-y-3"></div>
-            <div class="flex justify-end gap-2 border-t border-slate-800 pt-3">
-                <button onclick="closeModal()" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl text-xs font-semibold">Sluiten</button>
-                <button id="modal-save-btn" onclick="saveModalData()" class="px-4 py-2 bg-sky-600 hover:bg-sky-500 text-white rounded-xl text-xs font-semibold">Opslaan</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- TOAST -->
-    <div id="toast-msg" class="fixed top-4 right-4 bg-slate-900 border border-sky-500/40 text-sky-200 px-4 py-3 rounded-xl shadow-2xl z-50 text-xs flex items-center gap-2 transform translate-x-full transition-transform duration-300">
-        <i data-lucide="info" class="w-4 h-4"></i>
-        <span id="toast-text">Bericht</span>
+        </main>
     </div>
 
     <script>
         const API_URL = 'http://localhost:3000/api';
-        let accessToken = localStorage.getItem('globetrotter_token');
-        let currentWorkspaceId = localStorage.getItem('globetrotter_workspace_id');
-        let currentUserRole = localStorage.getItem('globetrotter_user_role');
-        let currentTripId = null;
-        let trips = [];
-        let chartInstance = null;
-
-        async function apiCall(endpoint, method = 'GET', body = null) {
-            const options = {
-                method,
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${accessToken}`
-                }
-            };
-            if (body) options.body = JSON.stringify(body);
-            const response = await fetch(`${API_URL}${endpoint}`, options);
-            const data = await response.json();
-            if (!response.ok) throw new Error(data.error || 'API Error');
-            return data;
-        }
+        let accessToken = localStorage.getItem('gt_token');
+        let currentWorkspace = null;
 
         async function handleLogin() {
             const email = document.getElementById('auth-email').value;
             const password = document.getElementById('auth-password').value;
-            if (!email || !password) { showError('Vul alle velden in'); return; }
-            showLoading('login-btn-text', true);
+
+            if (!email || !password) {
+                showAuthError('Vul email en wachtwoord in');
+                return;
+            }
+
             try {
-                const data = await fetch(`${API_URL}/auth/login`, {
+                const res = await fetch(`${API_URL}/auth/login`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ email, password })
-                }).then(r => r.json());
-                if (data.error) throw new Error(data.error);
-                accessToken = data.accessToken;
-                currentWorkspaceId = data.workspaces[0].id;
-                currentUserRole = data.workspaces[0].role;
-                localStorage.setItem('globetrotter_token', accessToken);
-                localStorage.setItem('globetrotter_workspace_id', currentWorkspaceId);
-                localStorage.setItem('globetrotter_user_role', currentUserRole);
-                initializeApp();
-            } catch (error) {
-                showError(error.message);
-            } finally {
-                showLoading('login-btn-text', false);
-            }
-        }
+                });
+                const data = await res.json();
 
-        async function handleRegister() {
-            const email = document.getElementById('reg-email').value;
-            const password = document.getElementById('reg-password').value;
-            const firstName = document.getElementById('reg-firstname').value;
-            const lastName = document.getElementById('reg-lastname').value;
-            if (!email || !password || password.length < 8) { showError('Min. 8 tekens'); return; }
-            showLoading('register-btn-text', true);
-            try {
-                const data = await fetch(`${API_URL}/auth/register`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ email, password, firstName, lastName })
-                }).then(r => r.json());
-                if (data.error) throw new Error(data.error);
-                accessToken = data.accessToken;
-                currentWorkspaceId = data.workspace.id;
-                currentUserRole = 'owner';
-                localStorage.setItem('globetrotter_token', accessToken);
-                localStorage.setItem('globetrotter_workspace_id', currentWorkspaceId);
-                localStorage.setItem('globetrotter_user_role', currentUserRole);
-                initializeApp();
-            } catch (error) {
-                showError(error.message);
-            } finally {
-                showLoading('register-btn-text', false);
-            }
-        }
+                if (!res.ok) throw new Error(data.error);
 
-        function switchAuthMode(mode) {
-            document.getElementById('login-form').classList.toggle('hidden', mode !== 'login');
-            document.getElementById('register-form').classList.toggle('hidden', mode !== 'register');
+                accessToken = data.accessToken;
+                localStorage.setItem('gt_token', accessToken);
+                localStorage.setItem('gt_workspace', data.workspaces[0].id);
+                
+                showApp();
+                loadDashboard();
+            } catch (error) {
+                showAuthError(error.message);
+            }
         }
 
         async function handleLogout() {
-            if (confirm('Uitloggen?')) {
-                localStorage.clear();
-                location.reload();
-            }
+            localStorage.removeItem('gt_token');
+            localStorage.removeItem('gt_workspace');
+            location.reload();
         }
 
-        async function initializeApp() {
-            document.getElementById('auth-screen').classList.add('hidden');
-            document.getElementById('header').classList.remove('hidden');
-            document.getElementById('main-content').classList.remove('hidden');
-            loadDashboard();
-        }
-
-        async function loadDashboard() {
-            try {
-                const data = await apiCall(`/trips/workspace/${currentWorkspaceId}`);
-                trips = data.trips || [];
-                if (trips.length > 0) {
-                    currentTripId = trips[0].id;
-                    renderTripSelector();
-                    renderDashboard();
-                }
-                document.getElementById('stat-trips').innerText = trips.length;
-                document.getElementById('stat-role').innerText = currentUserRole;
-            } catch (error) {
-                showToast('Fout bij laden');
-            }
-        }
-
-        function renderTripSelector() {
-            const select = document.getElementById('trip-selector');
-            select.innerHTML = '';
-            trips.forEach(trip => {
-                const opt = document.createElement('option');
-                opt.value = trip.id;
-                opt.textContent = trip.title;
-                if (trip.id === currentTripId) opt.selected = true;
-                select.appendChild(opt);
-            });
-        }
-
-        function switchTrip(tripId) {
-            currentTripId = tripId;
-            renderDashboard();
-        }
-
-        function renderDashboard() {
-            const trip = trips.find(t => t.id === currentTripId);
-            if (!trip) return;
-            document.getElementById('dash-title').innerText = trip.title;
-            const total = (trip.expenses || []).reduce((sum, e) => sum + parseFloat(e.amountEur || 0), 0);
-            document.getElementById('stat-total').innerText = `€${total.toFixed(2)}`;
-        }
-
-        function switchTab(tabName) {
-            document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
-            document.getElementById(`tab-${tabName}`).classList.add('active');
-        }
-
-        function openAddTripModal() {
-            document.getElementById('modal-title').innerText = 'Nieuwe Reis';
-            document.getElementById('modal-body').innerHTML = `
-                <input type="text" id="trip-title" placeholder="Reis titel" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-white text-sm focus:border-sky-500 focus:outline-none">
-                <input type="date" id="trip-start" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-white text-sm focus:border-sky-500 focus:outline-none">
-                <input type="date" id="trip-end" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-white text-sm focus:border-sky-500 focus:outline-none">
-            `;
-            document.getElementById('modal-save-btn').onclick = async () => {
-                const title = document.getElementById('trip-title').value;
-                const startDate = document.getElementById('trip-start').value;
-                const endDate = document.getElementById('trip-end').value;
-                if (!title || !startDate || !endDate) { showToast('Vul alles in'); return; }
-                try {
-                    await apiCall('/trips', 'POST', { workspaceId: currentWorkspaceId, title, startDate, endDate, type: 'roadtrip' });
-                    closeModal();
-                    loadDashboard();
-                    showToast('Reis aangemaakt!');
-                } catch (error) {
-                    showToast('Fout');
-                }
-            };
-            document.getElementById('app-modal').classList.remove('hidden');
-        }
-
-        function openAddExpenseModal() {
-            document.getElementById('modal-title').innerText = 'Uitgave';
-            document.getElementById('modal-body').innerHTML = `
-                <input type="text" id="exp-desc" placeholder="Beschrijving" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-white text-sm">
-                <input type="number" id="exp-amount" placeholder="Bedrag" step="0.01" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-white text-sm">
-                <select id="exp-cat" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-white text-sm">
-                    <option>flights</option>
-                    <option>accommodation</option>
-                    <option>meals</option>
-                </select>
-                <input type="date" id="exp-date" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-white text-sm">
-            `;
-            document.getElementById('modal-save-btn').onclick = async () => {
-                try {
-                    const desc = document.getElementById('exp-desc').value;
-                    const amount = parseFloat(document.getElementById('exp-amount').value);
-                    const category = document.getElementById('exp-cat').value;
-                    const date = document.getElementById('exp-date').value;
-                    await apiCall('/expenses', 'POST', { tripId: currentTripId, description: desc, amount, category, currency: 'EUR', date });
-                    closeModal();
-                    loadDashboard();
-                    showToast('Uitgave toegevoegd!');
-                } catch (error) {
-                    showToast('Fout');
-                }
-            };
-            document.getElementById('app-modal').classList.remove('hidden');
-        }
-
-        function openInviteMemberModal() {
-            document.getElementById('modal-title').innerText = 'Lid Uitnodigen';
-            document.getElementById('modal-body').innerHTML = `
-                <input type="email" id="member-email" placeholder="Email" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-white text-sm">
-                <select id="member-role" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-white text-sm">
-                    <option value="viewer">Viewer</option>
-                    <option value="editor">Editor</option>
-                    <option value="admin">Admin</option>
-                </select>
-            `;
-            document.getElementById('modal-save-btn').onclick = async () => {
-                try {
-                    const email = document.getElementById('member-email').value;
-                    const role = document.getElementById('member-role').value;
-                    await apiCall(`/workspaces/${currentWorkspaceId}/members/invite`, 'POST', { email, role });
-                    closeModal();
-                    showToast('Uitnodiging verzonden!');
-                } catch (error) {
-                    showToast('Fout');
-                }
-            };
-            document.getElementById('app-modal').classList.remove('hidden');
-        }
-
-        function closeModal() {
-            document.getElementById('app-modal').classList.add('hidden');
-        }
-
-        function saveModalData() {
-            document.getElementById('modal-save-btn').onclick?.();
-        }
-
-        function showToast(message) {
-            const toast = document.getElementById('toast-msg');
-            document.getElementById('toast-text').innerText = message;
-            toast.classList.remove('translate-x-full');
-            setTimeout(() => toast.classList.add('translate-x-full'), 3000);
-        }
-
-        function showError(message) {
+        function showAuthError(msg) {
             const err = document.getElementById('auth-error');
-            err.innerText = message;
+            err.innerText = msg;
             err.classList.remove('hidden');
             setTimeout(() => err.classList.add('hidden'), 5000);
         }
 
-        function showLoading(elementId, show) {
-            const btn = document.getElementById(elementId);
-            if (show) {
-                btn.innerHTML = '<span class="loading"></span>';
-            } else {
-                btn.innerText = elementId === 'login-btn-text' ? 'Inloggen' : 'Account aanmaken';
+        function showApp() {
+            document.getElementById('auth-screen').classList.add('hidden');
+            document.getElementById('app').classList.remove('hidden');
+        }
+
+        async function loadDashboard() {
+            const workspaceId = localStorage.getItem('gt_workspace');
+            try {
+                const res = await fetch(`${API_URL}/workspaces/${workspaceId}`, {
+                    headers: { 'Authorization': `Bearer ${accessToken}` }
+                });
+                const data = await res.json();
+                currentWorkspace = data.workspace;
+
+                // Load trips
+                const tripsRes = await fetch(`${API_URL}/trips/workspace/${workspaceId}`, {
+                    headers: { 'Authorization': `Bearer ${accessToken}` }
+                });
+                const tripsData = await tripsRes.json();
+
+                document.getElementById('total-trips').innerText = tripsData.trips?.length || 0;
+                document.getElementById('workspace-members').innerText = currentWorkspace.members?.length || 0;
+
+                const totalExpenses = (tripsData.trips || []).reduce((sum, trip) => 
+                    sum + (trip.expenses || []).reduce((s, e) => s + parseFloat(e.amountEur || 0), 0), 0
+                );
+                document.getElementById('total-expenses').innerText = '€' + totalExpenses.toFixed(2);
+
+                // Render trips
+                const tripsList = document.getElementById('trips-list');
+                if (tripsData.trips?.length) {
+                    tripsList.innerHTML = tripsData.trips.map(trip => `
+                        <div class="bg-slate-900/80 p-3 rounded-lg border border-slate-700 flex justify-between items-center">
+                            <div>
+                                <p class="text-sm font-bold text-white">${trip.title}</p>
+                                <p class="text-xs text-slate-400">${new Date(trip.startDate).toLocaleDateString()} → ${new Date(trip.endDate).toLocaleDateString()}</p>
+                            </div>
+                            <span class="text-xs px-2 py-1 rounded bg-sky-500/20 text-sky-300">${trip.type}</span>
+                        </div>
+                    `).join('');
+                } else {
+                    tripsList.innerHTML = '<p class="text-xs text-slate-400">No trips yet. Create one to get started!</p>';
+                }
+            } catch (error) {
+                console.error('Error loading dashboard:', error);
             }
         }
 
         document.addEventListener('DOMContentLoaded', () => {
             lucide.createIcons();
-            if (accessToken && currentWorkspaceId) {
-                initializeApp();
+            if (accessToken) {
+                showApp();
+                loadDashboard();
             }
         });
     </script>
