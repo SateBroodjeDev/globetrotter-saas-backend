@@ -1,5 +1,5 @@
 const express = require('express');
-const { authenticate, authorizeWorkspace, authorize } = require('../middleware/auth');
+const { authenticate, authorizeWorkspace, authorize, requireWorkspaceAccess } = require('../middleware/auth');
 const { asyncHandler } = require('../middleware/errorHandler');
 const { validateTrip } = require('../middleware/validation');
 const tripService = require('../services/tripService');
@@ -71,7 +71,7 @@ router.post('/', authenticate, asyncHandler(async (req, res) => {
 }));
 
 // Get workspace trips
-router.get('/workspace/:workspaceId', authenticate, asyncHandler(async (req, res) => {
+router.get('/workspace/:workspaceId', authenticate, requireWorkspaceAccess(), asyncHandler(async (req, res) => {
   const trips = await db.Trip.findAll({
     where: {
       workspaceId: req.params.workspaceId,
@@ -108,13 +108,13 @@ router.get('/public/:shareToken', asyncHandler(async (req, res) => {
 }));
 
 // Add day to trip
-router.post('/:tripId/days', authenticate, asyncHandler(async (req, res) => {
+router.post('/:tripId/days', authenticate, requireWorkspaceAccess(), asyncHandler(async (req, res) => {
   const day = await tripService.addDay(req.params.tripId, req.body);
   res.status(201).json({ message: 'Day added', day });
 }));
 
 // Get trip stats
-router.get('/:tripId/stats', authenticate, asyncHandler(async (req, res) => {
+router.get('/:tripId/stats', authenticate, requireWorkspaceAccess(), asyncHandler(async (req, res) => {
   const trip = await db.Trip.findByPk(req.params.tripId, {
     include: { association: 'expenses' }
   });

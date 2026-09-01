@@ -1,5 +1,5 @@
 const express = require('express');
-const { authenticate } = require('../middleware/auth');
+const { authenticate, requireWorkspaceAccess } = require('../middleware/auth');
 const { db } = require('../config/database');
 const stripeService = require('../services/stripeService');
 const { formatError } = require('../middleware/errorHandler');
@@ -17,7 +17,7 @@ router.get('/plans', async (req, res) => {
 });
 
 // POST /api/payments/checkout — create Stripe Checkout session
-router.post('/checkout', authenticate, async (req, res) => {
+router.post('/checkout', authenticate, requireWorkspaceAccess(['owner', 'admin']), async (req, res) => {
   const { priceId, workspaceId } = req.body;
 
   if (!priceId) {
@@ -42,7 +42,10 @@ router.post('/checkout', authenticate, async (req, res) => {
 });
 
 // POST /api/payments/webhook — Stripe webhook (raw body required)
-router.post('/webhook', express.raw({ type: 'application/json' }), async (req, res) => {
+// NOTE: This route is also mounted directly in server.js BEFORE express.json()
+// to ensure the raw body is available for signature verification. The handler
+// is exported so both mounting points share the same logic.
+async function webhookHandler(req, res) {
   const sig = req.headers['stripe-signature'];
 
   try {
@@ -52,7 +55,9 @@ router.post('/webhook', express.raw({ type: 'application/json' }), async (req, r
   } catch (error) {
     res.status(400).json({ error: 'Webhook Error', message: 'Invalid webhook payload or signature' });
   }
-});
+}
+
+router.post('/webhook', express.raw({ type: 'application/json' }), webhookHandler);
 
 // GET /api/payments/subscription — get current workspace subscription
 router.get('/subscription', authenticate, async (req, res) => {
@@ -74,7 +79,7 @@ router.get('/subscription', authenticate, async (req, res) => {
 });
 
 // POST /api/payments/upgrade — redirect to Stripe Checkout for a new price
-router.post('/upgrade', authenticate, async (req, res) => {
+router.post('/upgrade', authenticate, requireWorkspaceAccess(['owner', 'admin']), async (req, res) => {
   const { newPriceId, workspaceId } = req.body;
 
   if (!newPriceId) {
@@ -99,7 +104,7 @@ router.post('/upgrade', authenticate, async (req, res) => {
 });
 
 // POST /api/payments/downgrade — schedule cancellation at period end
-router.post('/downgrade', authenticate, async (req, res) => {
+router.post('/downgrade', authenticate, requireWorkspaceAccess(['owner']), async (req, res) => {
   const wsId = req.body.workspaceId || req.user.workspaceId;
 
   if (!wsId) {
@@ -123,7 +128,7 @@ router.post('/downgrade', authenticate, async (req, res) => {
 });
 
 // POST /api/payments/customer-portal — create Stripe billing portal session
-router.post('/customer-portal', authenticate, async (req, res) => {
+router.post('/customer-portal', authenticate, requireWorkspaceAccess(['owner', 'admin']), async (req, res) => {
   const wsId = req.body.workspaceId || req.user.workspaceId;
 
   if (!wsId) {
@@ -190,3 +195,4 @@ router.get('/invoices/:invoiceId/pdf', authenticate, async (req, res) => {
 });
 
 module.exports = router;
+module.exports.webhookHandler = webhookHandler;

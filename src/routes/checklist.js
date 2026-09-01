@@ -1,5 +1,5 @@
 const express = require('express');
-const { authenticate } = require('../middleware/auth');
+const { authenticate, requireWorkspaceAccess } = require('../middleware/auth');
 const { asyncHandler } = require('../middleware/errorHandler');
 const { db } = require('../config/database');
 
@@ -15,7 +15,7 @@ router.get('/trip/:tripId', authenticate, asyncHandler(async (req, res) => {
 }));
 
 // Add checklist
-router.post('/', authenticate, asyncHandler(async (req, res) => {
+router.post('/', authenticate, requireWorkspaceAccess(), asyncHandler(async (req, res) => {
   const { tripId, title, items } = req.body;
 
   const trip = await db.Trip.findByPk(tripId);
