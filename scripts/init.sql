@@ -13,6 +13,7 @@ CREATE TABLE IF NOT EXISTS "Users" (
   "lastLogin" TIMESTAMP,
   "lastLoginIp" VARCHAR(45),
   "isActive" BOOLEAN DEFAULT true,
+  "role" VARCHAR(10) DEFAULT 'user',
   "isDeleted" BOOLEAN DEFAULT false,
   "deletedAt" TIMESTAMP,
   "createdAt" TIMESTAMP DEFAULT CURRENT_TIMESTAMP,

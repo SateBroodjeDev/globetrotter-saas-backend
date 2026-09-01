@@ -8,6 +8,7 @@ const { initializeRedis } = require('./config/redis');
 const apiRoutes = require('./routes');
 const errorHandler = require('./middleware/errorHandler');
 const { requestLogger } = require('./middleware/logging');
+const { apiLimiter } = require('./middleware/rateLimiter');
 
 dotenv.config();
 
@@ -37,7 +38,7 @@ app.get('/health', (req, res) => {
 });
 
 // API Routes
-app.use('/api', apiRoutes);
+app.use('/api', apiLimiter, apiRoutes);
 
 // 404 Handler
 app.use((req, res) => {
