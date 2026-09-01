@@ -11,3 +11,4 @@ build/
 uploads/
 .nyc_output/
 coverage/
+logs/

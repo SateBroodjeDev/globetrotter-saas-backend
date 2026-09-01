@@ -54,6 +54,10 @@ module.exports = (sequelize) => {
       type: DataTypes.STRING,
       allowNull: true
     },
+    stripeSubscriptionId: {
+      type: DataTypes.STRING,
+      allowNull: true
+    },
     subscriptionStatus: {
       type: DataTypes.ENUM('active', 'trialing', 'past_due', 'canceled'),
       defaultValue: 'active'
