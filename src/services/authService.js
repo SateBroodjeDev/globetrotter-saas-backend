@@ -94,9 +94,22 @@ class AuthService {
 
   async validateEmail(email, { checkUnique = true } = {}) {
     const normalizedEmail = String(email || '').trim().toLowerCase();
-    const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    const hasWhitespace = /\s/.test(normalizedEmail);
+    const emailParts = normalizedEmail.split('@');
+    const localPart = emailParts[0];
+    const domain = emailParts[1];
+    const domainParts = domain ? domain.split('.') : [];
 
-    if (!emailPattern.test(normalizedEmail)) {
+    if (
+      hasWhitespace ||
+      emailParts.length !== 2 ||
+      !localPart ||
+      !domain ||
+      domain.startsWith('.') ||
+      domain.endsWith('.') ||
+      domainParts.length < 2 ||
+      domainParts.some((part) => !part)
+    ) {
       throw createError(400, 'Invalid email format', 'INVALID_EMAIL_FORMAT');
     }
 
