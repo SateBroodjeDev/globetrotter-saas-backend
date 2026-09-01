@@ -12,7 +12,19 @@ module.exports = (sequelize) => {
       allowNull: false
     },
     category: {
-      type: DataTypes.ENUM('flights', 'accommodation', 'meals', 'transport', 'activities', 'shopping', 'other'),
+      type: DataTypes.ENUM(
+        'food',
+        'transport',
+        'hotel',
+        'activities',
+        'shopping',
+        'drinks',
+        'services',
+        'other',
+        'flights',
+        'accommodation',
+        'meals'
+      ),
       defaultValue: 'other'
     },
     amount: {
@@ -23,9 +35,19 @@ module.exports = (sequelize) => {
       type: DataTypes.STRING,
       defaultValue: 'EUR'
     },
+    originalCurrency: {
+      type: DataTypes.STRING,
+      allowNull: false,
+      defaultValue: 'EUR'
+    },
     amountEur: {
       type: DataTypes.DECIMAL(10, 2),
       allowNull: false
+    },
+    convertedEUR: {
+      type: DataTypes.DECIMAL(10, 2),
+      allowNull: false,
+      defaultValue: 0
     },
     exchangeRate: {
       type: DataTypes.DECIMAL(10, 4),
@@ -43,6 +65,17 @@ module.exports = (sequelize) => {
       type: DataTypes.JSONB,
       defaultValue: [],
       comment: 'Array of user IDs who share this expense'
+    },
+    splitType: {
+      type: DataTypes.ENUM('equal', 'percentage', 'custom'),
+      allowNull: false,
+      defaultValue: 'equal'
+    },
+    participants: {
+      type: DataTypes.JSONB,
+      allowNull: false,
+      defaultValue: [],
+      comment: 'Array of participants and share metadata'
     },
     receipt: {
       type: DataTypes.STRING,

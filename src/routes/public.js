@@ -1,7 +1,7 @@
 const express = require('express');
 const { asyncHandler } = require('../middleware/errorHandler');
 const { db } = require('../config/database');
-const EXCHANGE_RATES = require('../constants/exchangeRates');
+const currencyService = require('../services/currencyService');
 
 const router = express.Router();
 
@@ -25,19 +25,14 @@ router.get('/trips/:shareToken', asyncHandler(async (req, res) => {
 
 // GET /api/currency/exchange - exchange rates (cached)
 // Mounted at /currency in routes/index.js, so path here is /exchange
-let ratesCache = null;
-let ratesCacheTime = 0;
 router.get('/exchange', asyncHandler(async (req, res) => {
-  const now = Date.now();
-  if (ratesCache && now - ratesCacheTime < 3600 * 1000) {
-    return res.json({ rates: ratesCache, cached: true });
-  }
+  const date = req.query.date ? String(req.query.date).slice(0, 10) : null;
+  const rates = await currencyService.getRates(date);
+  res.json({ rates, base: 'EUR', date: date || 'latest' });
+}));
 
-  // Use built-in rates as fallback (live API would require key)
-  ratesCache = EXCHANGE_RATES;
-  ratesCacheTime = now;
-
-  res.json({ rates: EXCHANGE_RATES, cached: false });
+router.get('/supported', asyncHandler(async (req, res) => {
+  res.json({ currencies: currencyService.getSupportedCurrencies() });
 }));
 
 module.exports = router;

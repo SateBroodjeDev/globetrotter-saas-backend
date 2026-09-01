@@ -7,6 +7,7 @@ const bookingRoutes = require('./bookings');
 const checklistRoutes = require('./checklist');
 const adminRoutes = require('./admin');
 const publicRoutes = require('./public');
+const settlementRoutes = require('./settlements');
 
 const router = express.Router();
 
@@ -23,6 +24,7 @@ router.use('/trips', tripRoutes);
 router.use('/expenses', expenseRoutes);
 router.use('/bookings', bookingRoutes);
 router.use('/checklist', checklistRoutes);
+router.use('/', settlementRoutes);
 
 // Admin routes (role-restricted inside)
 router.use('/admin', adminRoutes);
