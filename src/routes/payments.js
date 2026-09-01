@@ -50,7 +50,7 @@ router.post('/webhook', express.raw({ type: 'application/json' }), async (req, r
     await stripeService.handleWebhook(event);
     res.json({ received: true });
   } catch (error) {
-    res.status(400).send(`Webhook Error: ${error.message}`);
+    res.status(400).json({ error: 'Webhook Error', message: 'Invalid webhook payload or signature' });
   }
 });
 
