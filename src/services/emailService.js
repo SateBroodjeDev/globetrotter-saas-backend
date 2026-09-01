@@ -194,6 +194,36 @@ class EmailService {
     const inviteUrl = `${process.env.FRONTEND_URL || process.env.APP_URL || 'http://localhost:3000'}/invite?token=${inviteToken}`;
     return this.sendWorkspaceInvitation(email, workspace.name, inviteUrl, 'your team');
   }
+
+  async sendRoleChangedEmail(email, workspaceId, oldRole, newRole) {
+    const safeOld = escapeHtml(oldRole);
+    const safeNew = escapeHtml(newRole);
+    return this.transporter.sendMail({
+      from: `"Globetrotter" <${process.env.EMAIL_FROM || 'noreply@globetrotter.io'}>`,
+      to: email,
+      subject: 'Your workspace role has changed',
+      html: `
+        <h1>Role Change Notification</h1>
+        <p>Your role in this workspace has been updated.</p>
+        <p>Previous role: <strong>${safeOld}</strong></p>
+        <p>New role: <strong>${safeNew}</strong></p>
+        <p>This change is effective immediately.</p>
+      `
+    });
+  }
+
+  async sendPasswordChangedEmail(email) {
+    return this.transporter.sendMail({
+      from: `"Globetrotter" <${process.env.EMAIL_FROM || 'noreply@globetrotter.io'}>`,
+      to: email,
+      subject: 'Your password has been changed',
+      html: `
+        <h1>Password Changed</h1>
+        <p>Your Globetrotter account password was just changed.</p>
+        <p>If this wasn't you, please <a href="${process.env.FRONTEND_URL || 'https://app.globetrotter.io'}/forgot-password">reset your password immediately</a>.</p>
+      `
+    });
+  }
 }
 
 module.exports = new EmailService();
