@@ -9,7 +9,7 @@ const { initializeRedis } = require('./config/redis');
 const apiRoutes = require('./routes');
 const { errorHandler } = require('./middleware/errorHandler');
 const { requestLogger } = require('./middleware/logging');
-const { apiLimiter } = require('./middleware/rateLimiter');
+const { apiLimiter, strictLimiter } = require('./middleware/rateLimiter');
 const { startEmailJobs } = require('./jobs/emailJobs');
 
 dotenv.config();
@@ -41,7 +41,7 @@ app.get('/health', (req, res) => {
   res.status(200).json({ status: 'ok', timestamp: new Date().toISOString() });
 });
 
-app.get('/trip/public/:shareToken', (req, res) => {
+app.get('/trip/public/:shareToken', strictLimiter, (req, res) => {
   res.sendFile(path.join(frontendDir, 'trip/public.html'));
 });
 
