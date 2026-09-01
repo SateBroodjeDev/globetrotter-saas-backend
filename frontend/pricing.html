@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Pricing – Globetrotter</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: system-ui, -apple-system, sans-serif; background: #f8fafc; color: #1e293b; }
+    header { background: #0ea5e9; color: #fff; padding: 1rem 2rem; display: flex; align-items: center; justify-content: space-between; }
+    header h1 { font-size: 1.5rem; font-weight: 700; }
+    header a { color: #fff; text-decoration: none; font-weight: 500; }
+    .hero { text-align: center; padding: 3rem 1rem 2rem; }
+    .hero h2 { font-size: 2.5rem; font-weight: 800; margin-bottom: 1rem; }
+    .hero p { font-size: 1.1rem; color: #475569; max-width: 560px; margin: 0 auto 2rem; }
+    .toggle-row { display: flex; align-items: center; justify-content: center; gap: 1rem; margin-bottom: 2.5rem; }
+    .toggle-row span { font-weight: 600; }
+    .toggle { position: relative; width: 52px; height: 28px; }
+    .toggle input { opacity: 0; width: 0; height: 0; }
+    .slider { position: absolute; inset: 0; background: #cbd5e1; border-radius: 999px; cursor: pointer; transition: .3s; }
+    .slider::before { content: ''; position: absolute; width: 22px; height: 22px; left: 3px; top: 3px; background: #fff; border-radius: 50%; transition: .3s; }
+    input:checked + .slider { background: #0ea5e9; }
+    input:checked + .slider::before { transform: translateX(24px); }
+    .badge { background: #dcfce7; color: #16a34a; font-size: .75rem; font-weight: 700; padding: 2px 8px; border-radius: 999px; }
+    .plans { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 2rem; max-width: 1100px; margin: 0 auto 4rem; padding: 0 1.5rem; }
+    .plan { background: #fff; border-radius: 1.5rem; border: 2px solid #e2e8f0; padding: 2rem; display: flex; flex-direction: column; }
+    .plan.popular { border-color: #0ea5e9; box-shadow: 0 8px 30px rgba(14,165,233,.15); }
+    .plan-badge { font-size: .75rem; font-weight: 700; color: #0ea5e9; text-transform: uppercase; letter-spacing: .05em; margin-bottom: .5rem; }
+    .plan h3 { font-size: 1.4rem; font-weight: 700; margin-bottom: .25rem; }
+    .price { font-size: 2.5rem; font-weight: 800; margin: 1rem 0 .25rem; }
+    .price span { font-size: 1rem; font-weight: 400; color: #64748b; }
+    .price-annual { display: none; }
+    body.annual .price-monthly { display: none; }
+    body.annual .price-annual { display: inline; }
+    .plan-desc { color: #64748b; font-size: .9rem; margin-bottom: 1.5rem; }
+    .features { list-style: none; flex: 1; }
+    .features li { padding: .45rem 0; font-size: .95rem; display: flex; align-items: center; gap: .5rem; border-bottom: 1px solid #f1f5f9; }
+    .features li:last-child { border-bottom: none; }
+    .features li::before { content: '✓'; color: #16a34a; font-weight: 700; }
+    .features li.no::before { content: '✗'; color: #94a3b8; }
+    .btn { display: block; text-align: center; padding: .85rem 1.5rem; border-radius: .75rem; font-weight: 700; font-size: 1rem; text-decoration: none; cursor: pointer; border: none; margin-top: 1.75rem; transition: opacity .2s; }
+    .btn:hover { opacity: .85; }
+    .btn-primary { background: #0ea5e9; color: #fff; }
+    .btn-outline { background: #fff; color: #0ea5e9; border: 2px solid #0ea5e9; }
+    .btn-dark { background: #1e293b; color: #fff; }
+    /* Comparison table */
+    .compare { max-width: 1100px; margin: 0 auto 4rem; padding: 0 1.5rem; }
+    .compare h2 { text-align: center; font-size: 2rem; font-weight: 800; margin-bottom: 2rem; }
+    table { width: 100%; border-collapse: collapse; background: #fff; border-radius: 1rem; overflow: hidden; box-shadow: 0 2px 12px rgba(0,0,0,.06); }
+    th { background: #f1f5f9; padding: 1rem; font-weight: 700; }
+    td { padding: .85rem 1rem; text-align: center; border-bottom: 1px solid #f1f5f9; }
+    tr:last-child td { border-bottom: none; }
+    td:first-child { text-align: left; font-weight: 500; }
+    .check { color: #16a34a; font-size: 1.1rem; }
+    .cross { color: #94a3b8; font-size: 1.1rem; }
+    /* FAQ */
+    .faq { max-width: 760px; margin: 0 auto 4rem; padding: 0 1.5rem; }
+    .faq h2 { text-align: center; font-size: 2rem; font-weight: 800; margin-bottom: 2rem; }
+    details { background: #fff; border-radius: .75rem; margin-bottom: 1rem; border: 1px solid #e2e8f0; overflow: hidden; }
+    summary { padding: 1.1rem 1.5rem; font-weight: 600; cursor: pointer; list-style: none; display: flex; justify-content: space-between; align-items: center; }
+    summary::after { content: '+'; font-size: 1.25rem; color: #0ea5e9; }
+    details[open] summary::after { content: '−'; }
+    details p { padding: 0 1.5rem 1.2rem; color: #475569; line-height: 1.6; }
+    /* Testimonials */
+    .testimonials { max-width: 1100px; margin: 0 auto 4rem; padding: 0 1.5rem; }
+    .testimonials h2 { text-align: center; font-size: 2rem; font-weight: 800; margin-bottom: 2rem; }
+    .tgrid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 1.5rem; }
+    .testimonial { background: #fff; border-radius: 1rem; padding: 1.5rem; border: 1px solid #e2e8f0; }
+    .testimonial p { color: #475569; margin-bottom: 1rem; line-height: 1.6; }
+    .testimonial .author { font-weight: 700; }
+    /* CTA */
+    .cta-section { background: #0ea5e9; color: #fff; text-align: center; padding: 3rem 1.5rem; }
+    .cta-section h2 { font-size: 2rem; font-weight: 800; margin-bottom: 1rem; }
+    .cta-section p { margin-bottom: 2rem; opacity: .9; }
+    .cta-section .btn { display: inline-block; background: #fff; color: #0ea5e9; padding: .85rem 2.5rem; }
+    footer { text-align: center; padding: 2rem; color: #94a3b8; font-size: .9rem; }
+    .guarantee { text-align: center; color: #475569; font-size: .9rem; margin-bottom: 2rem; }
+    .guarantee strong { color: #16a34a; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>🌍 Globetrotter</h1>
+    <nav>
+      <a href="index.html">Dashboard</a>
+    </nav>
+  </header>
+
+  <main>
+    <section class="hero">
+      <h2>Simple, Transparent Pricing</h2>
+      <p>Start for free. Upgrade when your team grows. No hidden fees.</p>
+      <div class="toggle-row">
+        <span>Monthly</span>
+        <label class="toggle">
+          <input type="checkbox" id="billingToggle" />
+          <span class="slider"></span>
+        </label>
+        <span>Annual <span class="badge">Save 20%</span></span>
+      </div>
+      <p class="guarantee"><strong>✓ 14-day free trial</strong> &nbsp;|&nbsp; <strong>✓ 30-day money-back guarantee</strong> &nbsp;|&nbsp; No credit card for free plan</p>
+    </section>
+
+    <section class="plans">
+      <!-- Starter -->
+      <div class="plan">
+        <p class="plan-badge">&nbsp;</p>
+        <h3>Starter</h3>
+        <div class="price">
+          <span class="price-monthly">€0 <span>/ month</span></span>
+          <span class="price-annual">€0 <span>/ month</span></span>
+        </div>
+        <p class="plan-desc">Perfect for personal trips and small groups.</p>
+        <ul class="features">
+          <li>2 trips</li>
+          <li>3 members per trip</li>
+          <li>Basic expense tracking</li>
+          <li>Settlement calculations</li>
+          <li class="no">PDF export</li>
+          <li class="no">Analytics dashboard</li>
+          <li class="no">API access</li>
+        </ul>
+        <a href="index.html" class="btn btn-outline">Get Started Free</a>
+      </div>
+
+      <!-- Pro -->
+      <div class="plan popular">
+        <p class="plan-badge">⭐ Most Popular</p>
+        <h3>Pro</h3>
+        <div class="price">
+          <span class="price-monthly">€9.99 <span>/ month</span></span>
+          <span class="price-annual">€7.99 <span>/ month</span></span>
+        </div>
+        <p class="plan-desc">For frequent travelers and growing teams.</p>
+        <ul class="features">
+          <li>∞ Unlimited trips</li>
+          <li>10 members per trip</li>
+          <li>PDF &amp; CSV export</li>
+          <li>Analytics dashboard</li>
+          <li>API access (beta)</li>
+          <li>Email support</li>
+          <li class="no">White-label branding</li>
+        </ul>
+        <button class="btn btn-primary" onclick="startCheckout('pro')">Start 14-Day Free Trial</button>
+      </div>
+
+      <!-- Business -->
+      <div class="plan">
+        <p class="plan-badge">&nbsp;</p>
+        <h3>Business</h3>
+        <div class="price">
+          <span class="price-monthly">€99 <span>/ month</span></span>
+          <span class="price-annual">€79 <span>/ month</span></span>
+        </div>
+        <p class="plan-desc">For companies running multiple workspaces.</p>
+        <ul class="features">
+          <li>Everything in Pro</li>
+          <li>∞ Unlimited members</li>
+          <li>White-label branding</li>
+          <li>Custom domain</li>
+          <li>SSO (coming soon)</li>
+          <li>Priority support</li>
+          <li>Dedicated account manager</li>
+        </ul>
+        <button class="btn btn-dark" onclick="contactSales()">Contact Sales</button>
+      </div>
+    </section>
+
+    <!-- Comparison table -->
+    <section class="compare">
+      <h2>Feature Comparison</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>Feature</th>
+            <th>Starter</th>
+            <th>Pro</th>
+            <th>Business</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td>Trips</td><td>2</td><td>Unlimited</td><td>Unlimited</td></tr>
+          <tr><td>Members per trip</td><td>3</td><td>10</td><td>Unlimited</td></tr>
+          <tr><td>Expense tracking</td><td class="check">✓</td><td class="check">✓</td><td class="check">✓</td></tr>
+          <tr><td>Multi-currency</td><td class="check">✓</td><td class="check">✓</td><td class="check">✓</td></tr>
+          <tr><td>Settlement calculator</td><td class="check">✓</td><td class="check">✓</td><td class="check">✓</td></tr>
+          <tr><td>PDF export</td><td class="cross">✗</td><td class="check">✓</td><td class="check">✓</td></tr>
+          <tr><td>Analytics dashboard</td><td class="cross">✗</td><td class="check">✓</td><td class="check">✓</td></tr>
+          <tr><td>API access</td><td class="cross">✗</td><td class="check">✓</td><td class="check">✓</td></tr>
+          <tr><td>White-label branding</td><td class="cross">✗</td><td class="cross">✗</td><td class="check">✓</td></tr>
+          <tr><td>Custom domain</td><td class="cross">✗</td><td class="cross">✗</td><td class="check">✓</td></tr>
+          <tr><td>SSO</td><td class="cross">✗</td><td class="cross">✗</td><td class="check">Coming soon</td></tr>
+          <tr><td>Priority support</td><td class="cross">✗</td><td class="cross">✗</td><td class="check">✓</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <!-- Testimonials -->
+    <section class="testimonials">
+      <h2>Loved by travelers worldwide</h2>
+      <div class="tgrid">
+        <div class="testimonial">
+          <p>"Globetrotter Pro saved our group trip planning. Splitting costs has never been easier!"</p>
+          <span class="author">— Lisa M., Travel Blogger</span>
+        </div>
+        <div class="testimonial">
+          <p>"We use Business for our whole company. The white-label feature is a game changer for our clients."</p>
+          <span class="author">— Rajesh K., Travel Agency CEO</span>
+        </div>
+        <div class="testimonial">
+          <p>"Started with Starter and upgraded to Pro after our first trip. Worth every cent!"</p>
+          <span class="author">— Sophie T., Digital Nomad</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- FAQ -->
+    <section class="faq">
+      <h2>Frequently Asked Questions</h2>
+      <details>
+        <summary>Can I switch plans later?</summary>
+        <p>Yes! You can upgrade or downgrade your plan at any time from your workspace settings. Upgrades take effect immediately; downgrades take effect at the end of the current billing period.</p>
+      </details>
+      <details>
+        <summary>How does the 14-day free trial work?</summary>
+        <p>When you sign up for Pro or Business, you get 14 days free. No credit card is charged during the trial. You can cancel any time before the trial ends.</p>
+      </details>
+      <details>
+        <summary>What happens if my payment fails?</summary>
+        <p>We'll send you an email with a link to update your payment method. Your account stays active for 3 days, after which it will be downgraded to the Starter plan if not resolved.</p>
+      </details>
+      <details>
+        <summary>Do you offer refunds?</summary>
+        <p>Yes, we offer a 30-day money-back guarantee on all paid plans. Contact support@globetrotter.io and we'll process your refund within 5 business days.</p>
+      </details>
+      <details>
+        <summary>Can I pay annually?</summary>
+        <p>Absolutely! Toggle the billing switch above to see annual pricing — you'll save 20% compared to paying monthly.</p>
+      </details>
+    </section>
+
+    <!-- CTA -->
+    <section class="cta-section">
+      <h2>Ready to plan your next adventure?</h2>
+      <p>Join thousands of travelers who trust Globetrotter to manage their trips.</p>
+      <a href="index.html" class="btn">Get Started for Free</a>
+    </section>
+  </main>
+
+  <footer>
+    <p>&copy; 2025 Globetrotter &bull; <a href="mailto:support@globetrotter.io">support@globetrotter.io</a></p>
+  </footer>
+
+  <script>
+    const API_BASE = (window.location.hostname === 'localhost')
+      ? 'http://localhost:3000/api'
+      : '/api';
+
+    // Annual/monthly toggle
+    document.getElementById('billingToggle').addEventListener('change', function () {
+      document.body.classList.toggle('annual', this.checked);
+    });
+
+    async function startCheckout(planName) {
+      const token = localStorage.getItem('accessToken');
+      if (!token) {
+        window.location.href = 'login.html?redirect=pricing.html';
+        return;
+      }
+
+      // Fetch available plans from backend to get Stripe price IDs
+      try {
+        const res = await fetch(`${API_BASE}/payments/plans`);
+        const plans = await res.json();
+        const isAnnual = document.getElementById('billingToggle').checked;
+
+        const targetPlan = plans.find(p => {
+          const nickname = (p.nickname || p.product?.name || '').toLowerCase();
+          const interval = p.recurring?.interval;
+          return nickname.includes(planName) && (isAnnual ? interval === 'year' : interval === 'month');
+        }) || plans.find(p => {
+          const nickname = (p.nickname || p.product?.name || '').toLowerCase();
+          return nickname.includes(planName);
+        });
+
+        if (!targetPlan) {
+          alert('Plan not found. Please contact support.');
+          return;
+        }
+
+        const workspaceId = localStorage.getItem('currentWorkspaceId');
+        const checkoutRes = await fetch(`${API_BASE}/payments/checkout`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer ' + token
+          },
+          body: JSON.stringify({ priceId: targetPlan.id, workspaceId })
+        });
+
+        const data = await checkoutRes.json();
+        if (data.url) {
+          window.location.href = data.url;
+        } else {
+          alert(data.error || 'Failed to start checkout.');
+        }
+      } catch (err) {
+        alert('An error occurred. Please try again.');
+      }
+    }
+
+    function contactSales() {
+      window.location.href = 'mailto:sales@globetrotter.io?subject=Business%20Plan%20Inquiry';
+    }
+  </script>
+</body>
+</html>

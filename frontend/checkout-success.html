@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Checkout Successful – Globetrotter</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: system-ui, -apple-system, sans-serif; background: #f8fafc; color: #1e293b; min-height: 100vh; display: flex; flex-direction: column; }
+    header { background: #0ea5e9; color: #fff; padding: 1rem 2rem; display: flex; align-items: center; justify-content: space-between; }
+    header h1 { font-size: 1.5rem; font-weight: 700; }
+    .container { flex: 1; display: flex; align-items: center; justify-content: center; padding: 2rem; }
+    .card { background: #fff; border-radius: 1.5rem; border: 1px solid #e2e8f0; padding: 3rem 2.5rem; max-width: 540px; width: 100%; text-align: center; box-shadow: 0 8px 32px rgba(0,0,0,.07); }
+    .icon { font-size: 4rem; margin-bottom: 1.5rem; }
+    h2 { font-size: 2rem; font-weight: 800; margin-bottom: .75rem; }
+    .subtitle { color: #475569; margin-bottom: 2rem; font-size: 1.05rem; line-height: 1.6; }
+    .plan-info { background: #f0f9ff; border: 1px solid #bae6fd; border-radius: 1rem; padding: 1.25rem 1.5rem; margin-bottom: 2rem; text-align: left; }
+    .plan-info h3 { font-size: 1rem; font-weight: 700; color: #0ea5e9; margin-bottom: .75rem; }
+    .plan-info ul { list-style: none; }
+    .plan-info li { padding: .3rem 0; font-size: .95rem; display: flex; align-items: center; gap: .5rem; }
+    .plan-info li::before { content: '✓'; color: #16a34a; font-weight: 700; }
+    .steps { text-align: left; margin-bottom: 2rem; }
+    .steps h3 { font-weight: 700; margin-bottom: 1rem; font-size: 1rem; }
+    .steps ol { padding-left: 1.25rem; }
+    .steps li { padding: .35rem 0; color: #475569; font-size: .95rem; line-height: 1.5; }
+    .btn { display: inline-block; padding: .85rem 2rem; border-radius: .75rem; font-weight: 700; font-size: 1rem; text-decoration: none; cursor: pointer; border: none; transition: opacity .2s; }
+    .btn:hover { opacity: .85; }
+    .btn-primary { background: #0ea5e9; color: #fff; width: 100%; text-align: center; display: block; }
+    .btn-outline { background: #fff; color: #0ea5e9; border: 2px solid #0ea5e9; margin-top: .75rem; width: 100%; text-align: center; display: block; }
+    .email-note { color: #64748b; font-size: .85rem; margin-top: 1.5rem; }
+    footer { text-align: center; padding: 1.5rem; color: #94a3b8; font-size: .85rem; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>🌍 Globetrotter</h1>
+  </header>
+
+  <main class="container">
+    <div class="card">
+      <div class="icon">🎉</div>
+      <h2>Payment Successful!</h2>
+      <p class="subtitle">
+        Welcome to <strong id="planLabel">Globetrotter Pro</strong>! Your subscription is now active and all your new features are unlocked.
+      </p>
+
+      <div class="plan-info" id="planFeatures">
+        <h3>Your new features:</h3>
+        <ul id="featureList">
+          <li>Unlimited trips</li>
+          <li>Up to 10 team members</li>
+          <li>Export to PDF &amp; CSV</li>
+          <li>Analytics dashboard</li>
+          <li>API access (beta)</li>
+        </ul>
+      </div>
+
+      <div class="steps">
+        <h3>Next steps:</h3>
+        <ol>
+          <li>Create your first trip in the dashboard</li>
+          <li>Invite your team members</li>
+          <li>Start tracking expenses and settlements</li>
+          <li>Check your email for a receipt and plan details</li>
+        </ol>
+      </div>
+
+      <a href="index.html" class="btn btn-primary">Go to Dashboard</a>
+      <a href="pricing.html" class="btn btn-outline">View Plan Details</a>
+
+      <p class="email-note">📧 A confirmation email has been sent to your registered address.</p>
+    </div>
+  </main>
+
+  <footer>
+    <p>&copy; 2025 Globetrotter &bull; Need help? <a href="mailto:support@globetrotter.io">support@globetrotter.io</a></p>
+  </footer>
+
+  <script>
+    const API_BASE = (window.location.hostname === 'localhost')
+      ? 'http://localhost:3000/api'
+      : '/api';
+
+    (async function init() {
+      const params = new URLSearchParams(window.location.search);
+      const sessionId = params.get('session_id');
+
+      if (!sessionId) return;
+
+      try {
+        const token = localStorage.getItem('accessToken');
+        const workspaceId = localStorage.getItem('currentWorkspaceId');
+        if (!token || !workspaceId) return;
+
+        const res = await fetch(`${API_BASE}/payments/subscription?workspaceId=${encodeURIComponent(workspaceId)}`, {
+          headers: { 'Authorization': 'Bearer ' + token }
+        });
+
+        if (!res.ok) return;
+        const sub = await res.json();
+        const plan = sub.plan || 'pro';
+
+        const labels = { pro: 'Globetrotter Pro', business: 'Globetrotter Business', starter: 'Globetrotter Starter' };
+        document.getElementById('planLabel').textContent = labels[plan] || 'Globetrotter Pro';
+
+        if (plan === 'business') {
+          document.getElementById('featureList').innerHTML = `
+            <li>Unlimited trips</li>
+            <li>Unlimited team members</li>
+            <li>PDF &amp; CSV export</li>
+            <li>Analytics dashboard</li>
+            <li>API access</li>
+            <li>White-label branding</li>
+            <li>Custom domain support</li>
+            <li>Priority support</li>
+          `;
+        }
+      } catch {
+        // Non-critical — page still works without plan detail
+      }
+    })();
+  </script>
+</body>
+</html>

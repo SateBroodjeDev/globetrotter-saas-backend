@@ -8,6 +8,7 @@ const checklistRoutes = require('./checklist');
 const adminRoutes = require('./admin');
 const publicRoutes = require('./public');
 const settlementRoutes = require('./settlements');
+const paymentRoutes = require('./payments');
 
 const router = express.Router();
 
@@ -17,6 +18,9 @@ router.use('/public', publicRoutes);
 
 // Currency exchange (public)
 router.use('/currency', publicRoutes);
+
+// Payment routes (webhook uses raw body — must be mounted before json middleware affects it)
+router.use('/payments', paymentRoutes);
 
 // Protected routes
 router.use('/workspaces', workspaceRoutes);
