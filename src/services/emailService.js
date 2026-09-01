@@ -125,6 +125,60 @@ class EmailService {
     });
   }
 
+  async sendUpgradeSuccessEmail(email, plan) {
+    const safePlan = escapeHtml(plan || 'pro');
+    const planLabels = { pro: 'Pro', business: 'Business', starter: 'Starter' };
+    const planPrices = { pro: '€9.99/month', business: '€99/month', starter: 'Free' };
+    const safeLabel = escapeHtml(planLabels[plan] || safePlan);
+    const safePrice = escapeHtml(planPrices[plan] || '');
+    return this.transporter.sendMail({
+      from: `"Globetrotter" <${process.env.EMAIL_FROM || 'noreply@globetrotter.io'}>`,
+      to: email,
+      subject: `Welcome to Globetrotter ${safeLabel}! 🎉`,
+      html: `
+        <h1>Welcome to Globetrotter ${safeLabel}!</h1>
+        <p>Thank you for upgrading your plan.</p>
+        <p><strong>Your plan:</strong> ${safeLabel}</p>
+        <p><strong>Monthly cost:</strong> ${safePrice}</p>
+        <p>Your new features are now active. Happy travels! 🌍</p>
+        <p>Need help? Contact <a href="mailto:support@globetrotter.io">support@globetrotter.io</a></p>
+      `
+    });
+  }
+
+  async sendPaymentReceiptEmail(email, amountPaid, invoiceUrl) {
+    const safeAmount = escapeHtml(String(amountPaid));
+    const safeUrl = encodeURI(invoiceUrl || '');
+    return this.transporter.sendMail({
+      from: `"Globetrotter" <${process.env.EMAIL_FROM || 'noreply@globetrotter.io'}>`,
+      to: email,
+      subject: 'Payment Receipt - Globetrotter',
+      html: `
+        <h1>Payment Received</h1>
+        <p>Thank you! We received your payment of <strong>€${safeAmount}</strong>.</p>
+        ${safeUrl ? `<p><a href="${safeUrl}">View Invoice</a></p>` : ''}
+        <p>Need help? Contact <a href="mailto:support@globetrotter.io">support@globetrotter.io</a></p>
+      `
+    });
+  }
+
+  async sendPaymentFailureEmail(email, billingPortalUrl) {
+    const safeUrl = encodeURI(billingPortalUrl || '');
+    return this.transporter.sendMail({
+      from: `"Globetrotter" <${process.env.EMAIL_FROM || 'noreply@globetrotter.io'}>`,
+      to: email,
+      subject: 'Payment Failed - Action Required',
+      html: `
+        <h1>Payment Failed</h1>
+        <p>Your recent payment for Globetrotter failed.</p>
+        <p>Please update your payment method to avoid service interruption:</p>
+        ${safeUrl ? `<a href="${safeUrl}" style="background:#0ea5e9;color:white;padding:12px 24px;border-radius:8px;text-decoration:none;display:inline-block;">Update Payment Method</a>` : ''}
+        <p>If not updated within 3 days, your subscription will be downgraded.</p>
+        <p>Need help? Contact <a href="mailto:support@globetrotter.io">support@globetrotter.io</a></p>
+      `
+    });
+  }
+
   async sendWelcome(user, verificationToken) {
     const verifyUrl = `${process.env.APP_URL || process.env.FRONTEND_URL || 'http://localhost:3000'}/verify-email?token=${verificationToken}`;
     await this.sendVerificationEmail(user.email, verifyUrl);

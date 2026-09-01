@@ -68,9 +68,31 @@ module.exports = (sequelize) => {
       type: DataTypes.STRING,
       allowNull: true
     },
+    subscriptionPlan: {
+      type: DataTypes.ENUM('starter', 'pro', 'business'),
+      defaultValue: 'starter'
+    },
     subscriptionStatus: {
       type: DataTypes.ENUM('active', 'trialing', 'past_due', 'canceled'),
       defaultValue: 'active'
+    },
+    features: {
+      type: DataTypes.JSONB,
+      defaultValue: {
+        maxTrips: 2,
+        maxMembers: 3,
+        export: false,
+        analytics: false,
+        api: false,
+        whiteLabel: false,
+        customDomain: false,
+        sso: false,
+        prioritySupport: false
+      }
+    },
+    trialEndsAt: {
+      type: DataTypes.DATE,
+      allowNull: true
     },
     isActive: {
       type: DataTypes.BOOLEAN,
@@ -94,6 +116,12 @@ module.exports = (sequelize) => {
     Workspace.belongsToMany(models.User, { through: models.WorkspaceUser, as: 'members' });
     Workspace.hasMany(models.Trip, { foreignKey: 'workspaceId', as: 'trips' });
     Workspace.hasMany(models.AuditLog, { foreignKey: 'workspaceId', as: 'auditLogs' });
+    if (models.Subscription) {
+      Workspace.hasMany(models.Subscription, { foreignKey: 'workspaceId', as: 'subscriptions' });
+    }
+    if (models.Invoice) {
+      Workspace.hasMany(models.Invoice, { foreignKey: 'workspaceId', as: 'invoices' });
+    }
   };
 
   return Workspace;
