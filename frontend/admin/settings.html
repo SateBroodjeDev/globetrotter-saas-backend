@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full bg-gray-950">
+<head>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Settings – Globetrotter Admin</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <style>body { font-family: system-ui, sans-serif; }</style>
+</head>
+<body class="h-full text-gray-100 bg-gray-950">
+
+<div id="auth-gate" class="fixed inset-0 bg-gray-950 z-50 flex items-center justify-center p-4">
+  <div class="bg-gray-900 border border-gray-700 rounded-2xl p-8 w-full max-w-sm space-y-5 shadow-2xl">
+    <div class="text-center"><div class="w-14 h-14 bg-indigo-600 rounded-xl flex items-center justify-center mx-auto mb-3"><i data-lucide="shield" class="w-7 h-7 text-white"></i></div><h1 class="text-xl font-bold">Admin Panel</h1></div>
+    <input id="login-email" type="email" placeholder="Admin email" class="w-full bg-gray-800 border border-gray-600 rounded-xl px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none">
+    <input id="login-password" type="password" placeholder="Password" class="w-full bg-gray-800 border border-gray-600 rounded-xl px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none">
+    <button onclick="handleLogin()" class="w-full py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold rounded-xl text-sm transition">Sign In</button>
+    <p id="login-error" class="text-xs text-red-400 text-center hidden"></p>
+  </div>
+</div>
+
+<div id="app" class="hidden h-full flex">
+  <aside class="w-64 bg-gray-900 border-r border-gray-800 flex flex-col shrink-0">
+    <div class="px-5 py-5 border-b border-gray-800"><a href="dashboard.html" class="flex items-center gap-3"><div class="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center"><i data-lucide="compass" class="w-4 h-4 text-white"></i></div><span class="font-bold text-sm">Globetrotter Admin</span></a></div>
+    <nav class="flex-1 px-3 py-4 space-y-1">
+      <a href="dashboard.html" class="flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm text-gray-400 hover:bg-gray-800 hover:text-white"><i data-lucide="layout-dashboard" class="w-4 h-4"></i> Dashboard</a>
+      <a href="users.html" class="flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm text-gray-400 hover:bg-gray-800 hover:text-white"><i data-lucide="users" class="w-4 h-4"></i> Users</a>
+      <a href="workspaces.html" class="flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm text-gray-400 hover:bg-gray-800 hover:text-white"><i data-lucide="building-2" class="w-4 h-4"></i> Workspaces</a>
+      <a href="subscriptions.html" class="flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm text-gray-400 hover:bg-gray-800 hover:text-white"><i data-lucide="credit-card" class="w-4 h-4"></i> Subscriptions</a>
+      <a href="payments.html" class="flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm text-gray-400 hover:bg-gray-800 hover:text-white"><i data-lucide="receipt" class="w-4 h-4"></i> Payments</a>
+      <a href="analytics.html" class="flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm text-gray-400 hover:bg-gray-800 hover:text-white"><i data-lucide="bar-chart-2" class="w-4 h-4"></i> Analytics</a>
+      <a href="audit-logs.html" class="flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm text-gray-400 hover:bg-gray-800 hover:text-white"><i data-lucide="scroll-text" class="w-4 h-4"></i> Audit Logs</a>
+      <a href="settings.html" class="flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm bg-indigo-600 text-white"><i data-lucide="settings" class="w-4 h-4"></i> Settings</a>
+    </nav>
+    <div class="px-3 py-4 border-t border-gray-800"><button onclick="handleLogout()" class="flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm text-red-400 hover:bg-red-950 w-full"><i data-lucide="log-out" class="w-4 h-4"></i> Logout</button></div>
+  </aside>
+
+  <main class="flex-1 overflow-y-auto">
+    <header class="bg-gray-900 border-b border-gray-800 px-6 py-4 flex items-center justify-between sticky top-0 z-10">
+      <h2 class="font-semibold text-lg">System Settings</h2>
+      <span id="admin-email" class="text-xs text-gray-400"></span>
+    </header>
+    <div class="p-6 space-y-6 max-w-3xl">
+
+      <!-- System Health -->
+      <div class="bg-gray-900 border border-gray-800 rounded-xl p-5">
+        <h3 class="font-semibold text-sm mb-4 flex items-center gap-2"><i data-lucide="activity" class="w-4 h-4 text-green-400"></i> System Health</h3>
+        <div id="health-grid" class="grid grid-cols-2 gap-3 text-sm">
+          <p class="text-gray-500">Loading…</p>
+        </div>
+      </div>
+
+      <!-- Feature Toggles -->
+      <div class="bg-gray-900 border border-gray-800 rounded-xl p-5">
+        <h3 class="font-semibold text-sm mb-4 flex items-center gap-2"><i data-lucide="toggle-right" class="w-4 h-4 text-indigo-400"></i> Feature Toggles</h3>
+        <div id="feature-toggles" class="space-y-3">
+          <p class="text-gray-500 text-sm">Loading…</p>
+        </div>
+        <button onclick="saveFeatures()" class="mt-4 px-4 py-2 bg-indigo-600 hover:bg-indigo-500 rounded-lg text-sm font-medium">Save Changes</button>
+      </div>
+
+      <!-- Platform Config -->
+      <div class="bg-gray-900 border border-gray-800 rounded-xl p-5">
+        <h3 class="font-semibold text-sm mb-4 flex items-center gap-2"><i data-lucide="sliders" class="w-4 h-4 text-yellow-400"></i> Configuration</h3>
+        <div class="space-y-4">
+          <div>
+            <label class="text-xs text-gray-400">Trial Duration (days)</label>
+            <input id="cfg-trial" type="number" min="1" max="90" class="mt-1 w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none">
+          </div>
+          <div>
+            <label class="text-xs text-gray-400">Max Workspace Size (GB)</label>
+            <input id="cfg-maxsize" type="number" min="1" class="mt-1 w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none">
+          </div>
+          <div class="flex items-center gap-3">
+            <input id="cfg-maintenance" type="checkbox" class="w-4 h-4 accent-indigo-500">
+            <label for="cfg-maintenance" class="text-sm text-gray-300">Maintenance Mode</label>
+          </div>
+        </div>
+        <button onclick="saveConfig()" class="mt-4 px-4 py-2 bg-indigo-600 hover:bg-indigo-500 rounded-lg text-sm font-medium">Save Configuration</button>
+      </div>
+
+      <!-- Test Email -->
+      <div class="bg-gray-900 border border-gray-800 rounded-xl p-5">
+        <h3 class="font-semibold text-sm mb-4 flex items-center gap-2"><i data-lucide="mail" class="w-4 h-4 text-blue-400"></i> Test Email</h3>
+        <div class="flex gap-3">
+          <input id="test-email" type="email" placeholder="Recipient email" class="flex-1 bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none">
+          <button onclick="sendTestEmail()" class="px-4 py-2 bg-blue-600 hover:bg-blue-500 rounded-lg text-sm font-medium">Send Test</button>
+        </div>
+      </div>
+
+    </div>
+  </main>
+</div>
+
+<script src="_admin.js"></script>
+<script>
+  let currentSettings = {};
+
+  async function loadSettings() {
+    try {
+      const [settings, health] = await Promise.all([
+        adminFetch('/admin/settings'),
+        adminFetch('/admin/system/health')
+      ]);
+      currentSettings = settings;
+
+      // Render health
+      const hg = document.getElementById('health-grid');
+      hg.innerHTML = `
+        <div class="bg-gray-800 rounded-lg p-3"><p class="text-xs text-gray-400">Database</p><p class="font-medium mt-0.5 ${health.database === 'healthy' ? 'text-green-400' : 'text-red-400'}">${health.database}</p></div>
+        <div class="bg-gray-800 rounded-lg p-3"><p class="text-xs text-gray-400">Redis</p><p class="font-medium mt-0.5 ${health.redis === 'healthy' ? 'text-green-400' : 'text-red-400'}">${health.redis}</p></div>
+        <div class="bg-gray-800 rounded-lg p-3"><p class="text-xs text-gray-400">Uptime</p><p class="font-medium mt-0.5">${Math.floor(health.uptime / 3600)}h ${Math.floor((health.uptime % 3600) / 60)}m</p></div>
+        <div class="bg-gray-800 rounded-lg p-3"><p class="text-xs text-gray-400">Heap Used</p><p class="font-medium mt-0.5">${health.memory?.heapUsedMB} MB</p></div>
+        <div class="bg-gray-800 rounded-lg p-3 col-span-2"><p class="text-xs text-gray-400">Overall Status</p><p class="font-semibold mt-0.5 ${health.status === 'healthy' ? 'text-green-400' : 'text-red-400'} text-lg">${health.status.toUpperCase()}</p></div>
+      `;
+
+      // Render feature toggles
+      const features = settings.features || {};
+      const featureLabels = { whiteLabel: 'White Label', api: 'API Access', customDomain: 'Custom Domain', twoFactor: '2FA', sso: 'SSO', betaFeatures: 'Beta Features' };
+      document.getElementById('feature-toggles').innerHTML = Object.entries(featureLabels).map(([key, label]) => `
+        <div class="flex items-center justify-between py-2 border-b border-gray-800 last:border-0">
+          <span class="text-sm text-gray-300">${label}</span>
+          <label class="relative inline-flex items-center cursor-pointer">
+            <input type="checkbox" id="feat-${key}" ${features[key] ? 'checked' : ''} class="sr-only peer">
+            <div class="w-10 h-5 bg-gray-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-5 peer-checked:bg-indigo-600 after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all"></div>
+          </label>
+        </div>
+      `).join('');
+
+      // Render config
+      document.getElementById('cfg-trial').value = settings.trialDurationDays || 14;
+      document.getElementById('cfg-maxsize').value = settings.maxWorkspaceSizeGB || 5;
+      document.getElementById('cfg-maintenance').checked = settings.maintenanceMode || false;
+
+      lucide.createIcons();
+    } catch(e) { console.error(e); }
+  }
+
+  async function saveFeatures() {
+    const featureKeys = ['whiteLabel', 'api', 'customDomain', 'twoFactor', 'sso', 'betaFeatures'];
+    const features = {};
+    featureKeys.forEach(key => {
+      const el = document.getElementById(`feat-${key}`);
+      if (el) features[key] = el.checked;
+    });
+    try {
+      await adminFetch('/admin/settings', { method: 'PUT', body: JSON.stringify({ features }) });
+      showToast('Features saved');
+    } catch(e) { showToast('Failed to save', 'error'); }
+  }
+
+  async function saveConfig() {
+    const body = {
+      trialDurationDays: parseInt(document.getElementById('cfg-trial').value),
+      maxWorkspaceSizeGB: parseInt(document.getElementById('cfg-maxsize').value),
+      maintenanceMode: document.getElementById('cfg-maintenance').checked
+    };
+    try {
+      await adminFetch('/admin/settings', { method: 'PUT', body: JSON.stringify(body) });
+      showToast('Configuration saved');
+    } catch(e) { showToast('Failed to save', 'error'); }
+  }
+
+  async function sendTestEmail() {
+    const to = document.getElementById('test-email').value;
+    if (!to) return showToast('Enter a recipient email', 'error');
+    try {
+      const r = await adminFetch('/admin/email/test', { method: 'POST', body: JSON.stringify({ to }) });
+      showToast(r.message || 'Test email sent');
+    } catch(e) { showToast('Failed to send', 'error'); }
+  }
+
+  function bootstrap() {
+    document.getElementById('auth-gate').classList.add('hidden');
+    document.getElementById('app').classList.remove('hidden');
+    document.getElementById('admin-email').textContent = localStorage.getItem('admin_email') || '';
+    lucide.createIcons();
+    loadSettings();
+  }
+  requireAdminAuth(bootstrap);
+</script>
+</body>
+</html>

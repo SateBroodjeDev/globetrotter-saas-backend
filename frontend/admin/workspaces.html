@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full bg-gray-950">
+<head>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Workspaces – Globetrotter Admin</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <style>body { font-family: system-ui, sans-serif; }</style>
+</head>
+<body class="h-full text-gray-100 bg-gray-950">
+
+<div id="auth-gate" class="fixed inset-0 bg-gray-950 z-50 flex items-center justify-center p-4">
+  <div class="bg-gray-900 border border-gray-700 rounded-2xl p-8 w-full max-w-sm space-y-5 shadow-2xl">
+    <div class="text-center">
+      <div class="w-14 h-14 bg-indigo-600 rounded-xl flex items-center justify-center mx-auto mb-3"><i data-lucide="shield" class="w-7 h-7 text-white"></i></div>
+      <h1 class="text-xl font-bold">Admin Panel</h1>
+    </div>
+    <input id="login-email" type="email" placeholder="Admin email" class="w-full bg-gray-800 border border-gray-600 rounded-xl px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none">
+    <input id="login-password" type="password" placeholder="Password" class="w-full bg-gray-800 border border-gray-600 rounded-xl px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none">
+    <button onclick="handleLogin()" class="w-full py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold rounded-xl text-sm transition">Sign In</button>
+    <p id="login-error" class="text-xs text-red-400 text-center hidden"></p>
+  </div>
+</div>
+
+<div id="app" class="hidden h-full flex">
+  <aside class="w-64 bg-gray-900 border-r border-gray-800 flex flex-col shrink-0">
+    <div class="px-5 py-5 border-b border-gray-800"><a href="dashboard.html" class="flex items-center gap-3"><div class="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center"><i data-lucide="compass" class="w-4 h-4 text-white"></i></div><span class="font-bold text-sm">Globetrotter Admin</span></a></div>
+    <nav class="flex-1 px-3 py-4 space-y-1">
+      <a href="dashboard.html" class="flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm text-gray-400 hover:bg-gray-800 hover:text-white"><i data-lucide="layout-dashboard" class="w-4 h-4"></i> Dashboard</a>
+      <a href="users.html" class="flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm text-gray-400 hover:bg-gray-800 hover:text-white"><i data-lucide="users" class="w-4 h-4"></i> Users</a>
+      <a href="workspaces.html" class="flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm bg-indigo-600 text-white"><i data-lucide="building-2" class="w-4 h-4"></i> Workspaces</a>
+      <a href="subscriptions.html" class="flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm text-gray-400 hover:bg-gray-800 hover:text-white"><i data-lucide="credit-card" class="w-4 h-4"></i> Subscriptions</a>
+      <a href="payments.html" class="flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm text-gray-400 hover:bg-gray-800 hover:text-white"><i data-lucide="receipt" class="w-4 h-4"></i> Payments</a>
+      <a href="analytics.html" class="flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm text-gray-400 hover:bg-gray-800 hover:text-white"><i data-lucide="bar-chart-2" class="w-4 h-4"></i> Analytics</a>
+      <a href="audit-logs.html" class="flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm text-gray-400 hover:bg-gray-800 hover:text-white"><i data-lucide="scroll-text" class="w-4 h-4"></i> Audit Logs</a>
+      <a href="settings.html" class="flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm text-gray-400 hover:bg-gray-800 hover:text-white"><i data-lucide="settings" class="w-4 h-4"></i> Settings</a>
+    </nav>
+    <div class="px-3 py-4 border-t border-gray-800"><button onclick="handleLogout()" class="flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm text-red-400 hover:bg-red-950 w-full"><i data-lucide="log-out" class="w-4 h-4"></i> Logout</button></div>
+  </aside>
+
+  <main class="flex-1 overflow-y-auto">
+    <header class="bg-gray-900 border-b border-gray-800 px-6 py-4 flex items-center justify-between sticky top-0 z-10">
+      <h2 class="font-semibold text-lg">Workspaces</h2>
+      <span id="admin-email" class="text-xs text-gray-400"></span>
+    </header>
+    <div class="p-6 space-y-4">
+      <div class="flex flex-wrap gap-3">
+        <input id="search" type="text" placeholder="Search workspace name…" oninput="debouncedLoad()" class="bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none w-64">
+        <select id="plan-filter" onchange="loadWorkspaces()" class="bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm focus:outline-none">
+          <option value="">All plans</option>
+          <option value="starter">Starter</option>
+          <option value="pro">Pro</option>
+          <option value="business">Business</option>
+        </select>
+      </div>
+      <div class="bg-gray-900 border border-gray-800 rounded-xl overflow-hidden">
+        <table class="w-full text-sm">
+          <thead class="bg-gray-800 text-gray-400 text-xs uppercase">
+            <tr>
+              <th class="px-4 py-3 text-left">Name</th>
+              <th class="px-4 py-3 text-left">Owner</th>
+              <th class="px-4 py-3 text-left">Plan</th>
+              <th class="px-4 py-3 text-left">Status</th>
+              <th class="px-4 py-3 text-left">Created</th>
+              <th class="px-4 py-3 text-left">Actions</th>
+            </tr>
+          </thead>
+          <tbody id="ws-tbody" class="divide-y divide-gray-800">
+            <tr><td colspan="6" class="px-4 py-6 text-center text-gray-500">Loading…</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="flex items-center justify-between text-sm text-gray-400">
+        <span id="page-info">—</span>
+        <div class="flex gap-2">
+          <button id="btn-prev" onclick="changePage(-1)" class="px-3 py-1.5 bg-gray-800 hover:bg-gray-700 rounded-lg">Prev</button>
+          <button id="btn-next" onclick="changePage(1)" class="px-3 py-1.5 bg-gray-800 hover:bg-gray-700 rounded-lg">Next</button>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<script src="_admin.js"></script>
+<script>
+  let currentPage = 1, totalPages = 1, debounceTimer;
+
+  function debouncedLoad() { clearTimeout(debounceTimer); debounceTimer = setTimeout(() => { currentPage = 1; loadWorkspaces(); }, 300); }
+
+  async function loadWorkspaces() {
+    const search = document.getElementById('search').value;
+    const plan = document.getElementById('plan-filter').value;
+    let url = `/admin/workspaces?page=${currentPage}&limit=20`;
+    if (search) url += `&search=${encodeURIComponent(search)}`;
+    if (plan) url += `&plan=${plan}`;
+    try {
+      const data = await adminFetch(url);
+      totalPages = data.pages || 1;
+      document.getElementById('page-info').textContent = `Page ${currentPage} of ${totalPages} (${fmt(data.total)} workspaces)`;
+      const tbody = document.getElementById('ws-tbody');
+      if (!data.workspaces || data.workspaces.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="6" class="px-4 py-6 text-center text-gray-500">No workspaces found</td></tr>';
+        return;
+      }
+      const planColor = { starter: 'bg-gray-700 text-gray-300', pro: 'bg-indigo-900 text-indigo-300', business: 'bg-green-900 text-green-300' };
+      tbody.innerHTML = data.workspaces.map(w => `
+        <tr class="hover:bg-gray-800/50">
+          <td class="px-4 py-3 font-medium">${w.name}<br><span class="text-xs text-gray-500">${w.slug}</span></td>
+          <td class="px-4 py-3 text-gray-300 text-xs">${w.owner ? w.owner.email : '—'}</td>
+          <td class="px-4 py-3"><span class="px-2 py-0.5 rounded text-xs ${planColor[w.planTier] || 'bg-gray-700 text-gray-300'}">${w.planTier}</span></td>
+          <td class="px-4 py-3"><span class="px-2 py-0.5 rounded text-xs ${w.isActive ? 'bg-green-900 text-green-300' : 'bg-red-900 text-red-300'}">${w.isActive ? 'Active' : 'Archived'}</span></td>
+          <td class="px-4 py-3 text-gray-400 text-xs">${fmtDate(w.createdAt)}</td>
+          <td class="px-4 py-3">
+            <div class="flex gap-2">
+              <button onclick="archiveWs('${w.id}')" class="text-xs px-2 py-1 bg-yellow-900 hover:bg-yellow-800 text-yellow-300 rounded">Archive</button>
+              <button onclick="deleteWs('${w.id}')" class="text-xs px-2 py-1 bg-red-900 hover:bg-red-800 text-red-300 rounded">Delete</button>
+            </div>
+          </td>
+        </tr>
+      `).join('');
+    } catch(e) { console.error(e); }
+  }
+
+  function changePage(delta) { currentPage = Math.max(1, Math.min(totalPages, currentPage + delta)); loadWorkspaces(); }
+
+  async function archiveWs(id) {
+    if (!confirm('Archive this workspace?')) return;
+    try { await adminFetch(`/admin/workspaces/${id}/archive`, { method: 'POST' }); showToast('Workspace archived'); loadWorkspaces(); } catch(e) { showToast('Failed', 'error'); }
+  }
+
+  async function deleteWs(id) {
+    if (!confirm('Permanently delete this workspace? This cannot be undone.')) return;
+    try { await adminFetch(`/admin/workspaces/${id}`, { method: 'DELETE' }); showToast('Workspace deleted'); loadWorkspaces(); } catch(e) { showToast('Failed', 'error'); }
+  }
+
+  function bootstrap() {
+    document.getElementById('auth-gate').classList.add('hidden');
+    document.getElementById('app').classList.remove('hidden');
+    document.getElementById('admin-email').textContent = localStorage.getItem('admin_email') || '';
+    lucide.createIcons();
+    loadWorkspaces();
+  }
+  requireAdminAuth(bootstrap);
+</script>
+</body>
+</html>

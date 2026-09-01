@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full bg-gray-950">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Dashboard – Globetrotter</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    body { font-family: system-ui, sans-serif; }
+    .sidebar-link { @apply flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm text-gray-400 hover:bg-gray-800 hover:text-white transition; }
+    .sidebar-link.active { @apply bg-indigo-600 text-white; }
+  </style>
+</head>
+<body class="h-full text-gray-100 bg-gray-950">
+
+<!-- Auth gate -->
+<div id="auth-gate" class="fixed inset-0 bg-gray-950 z-50 flex items-center justify-center p-4">
+  <div class="bg-gray-900 border border-gray-700 rounded-2xl p-8 w-full max-w-sm space-y-5 shadow-2xl">
+    <div class="text-center">
+      <div class="w-14 h-14 bg-indigo-600 rounded-xl flex items-center justify-center mx-auto mb-3">
+        <i data-lucide="shield" class="w-7 h-7 text-white"></i>
+      </div>
+      <h1 class="text-xl font-bold">Admin Panel</h1>
+      <p class="text-xs text-gray-400 mt-1">Globetrotter Platform Admin</p>
+    </div>
+    <input id="login-email" type="email" placeholder="Admin email" class="w-full bg-gray-800 border border-gray-600 rounded-xl px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none">
+    <input id="login-password" type="password" placeholder="Password" class="w-full bg-gray-800 border border-gray-600 rounded-xl px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none">
+    <button onclick="handleLogin()" class="w-full py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold rounded-xl text-sm transition">Sign In</button>
+    <p id="login-error" class="text-xs text-red-400 text-center hidden"></p>
+  </div>
+</div>
+
+<!-- App shell -->
+<div id="app" class="hidden h-full flex">
+
+  <!-- Sidebar -->
+  <aside class="w-64 bg-gray-900 border-r border-gray-800 flex flex-col">
+    <div class="px-5 py-5 border-b border-gray-800">
+      <div class="flex items-center gap-3">
+        <div class="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center">
+          <i data-lucide="compass" class="w-4 h-4 text-white"></i>
+        </div>
+        <span class="font-bold text-sm">Globetrotter Admin</span>
+      </div>
+    </div>
+    <nav class="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
+      <a href="dashboard.html" class="sidebar-link active"><i data-lucide="layout-dashboard" class="w-4 h-4"></i> Dashboard</a>
+      <a href="users.html" class="sidebar-link"><i data-lucide="users" class="w-4 h-4"></i> Users</a>
+      <a href="workspaces.html" class="sidebar-link"><i data-lucide="building-2" class="w-4 h-4"></i> Workspaces</a>
+      <a href="subscriptions.html" class="sidebar-link"><i data-lucide="credit-card" class="w-4 h-4"></i> Subscriptions</a>
+      <a href="payments.html" class="sidebar-link"><i data-lucide="receipt" class="w-4 h-4"></i> Payments</a>
+      <a href="analytics.html" class="sidebar-link"><i data-lucide="bar-chart-2" class="w-4 h-4"></i> Analytics</a>
+      <a href="audit-logs.html" class="sidebar-link"><i data-lucide="scroll-text" class="w-4 h-4"></i> Audit Logs</a>
+      <a href="settings.html" class="sidebar-link"><i data-lucide="settings" class="w-4 h-4"></i> Settings</a>
+    </nav>
+    <div class="px-3 py-4 border-t border-gray-800">
+      <button onclick="handleLogout()" class="sidebar-link w-full text-left text-red-400 hover:text-red-300 hover:bg-red-950">
+        <i data-lucide="log-out" class="w-4 h-4"></i> Logout
+      </button>
+    </div>
+  </aside>
+
+  <!-- Main content -->
+  <main class="flex-1 overflow-y-auto">
+    <!-- Top bar -->
+    <header class="bg-gray-900 border-b border-gray-800 px-6 py-4 flex items-center justify-between sticky top-0 z-10">
+      <h2 class="font-semibold text-lg">Dashboard</h2>
+      <div class="flex items-center gap-4">
+        <span id="health-dot" class="flex items-center gap-1.5 text-xs text-green-400">
+          <span class="w-2 h-2 bg-green-400 rounded-full animate-pulse"></span> System Healthy
+        </span>
+        <span id="admin-email" class="text-xs text-gray-400"></span>
+      </div>
+    </header>
+
+    <div class="p-6 space-y-6">
+
+      <!-- KPI cards -->
+      <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <div class="bg-gray-900 border border-gray-800 rounded-xl p-5">
+          <p class="text-xs text-gray-400">Total Users</p>
+          <p id="kpi-users" class="text-3xl font-bold mt-1">—</p>
+        </div>
+        <div class="bg-gray-900 border border-gray-800 rounded-xl p-5">
+          <p class="text-xs text-gray-400">Active Workspaces</p>
+          <p id="kpi-workspaces" class="text-3xl font-bold mt-1">—</p>
+        </div>
+        <div class="bg-gray-900 border border-gray-800 rounded-xl p-5">
+          <p class="text-xs text-gray-400">Monthly Revenue (MRR)</p>
+          <p id="kpi-mrr" class="text-3xl font-bold mt-1 text-green-400">—</p>
+        </div>
+        <div class="bg-gray-900 border border-gray-800 rounded-xl p-5">
+          <p class="text-xs text-gray-400">Churn Rate</p>
+          <p id="kpi-churn" class="text-3xl font-bold mt-1 text-yellow-400">—</p>
+        </div>
+      </div>
+
+      <!-- Secondary KPIs -->
+      <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <div class="bg-gray-900 border border-gray-800 rounded-xl p-4">
+          <p class="text-xs text-gray-400">Active Subscriptions</p>
+          <p id="kpi-active-subs" class="text-2xl font-bold mt-1 text-indigo-400">—</p>
+        </div>
+        <div class="bg-gray-900 border border-gray-800 rounded-xl p-4">
+          <p class="text-xs text-gray-400">Past Due</p>
+          <p id="kpi-past-due" class="text-2xl font-bold mt-1 text-red-400">—</p>
+        </div>
+        <div class="bg-gray-900 border border-gray-800 rounded-xl p-4">
+          <p class="text-xs text-gray-400">Trials Ending (7d)</p>
+          <p id="kpi-trials" class="text-2xl font-bold mt-1 text-orange-400">—</p>
+        </div>
+        <div class="bg-gray-900 border border-gray-800 rounded-xl p-4">
+          <p class="text-xs text-gray-400">Active Users</p>
+          <p id="kpi-active-users" class="text-2xl font-bold mt-1">—</p>
+        </div>
+      </div>
+
+      <!-- Charts row -->
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div class="bg-gray-900 border border-gray-800 rounded-xl p-5">
+          <h3 class="text-sm font-semibold mb-4">User Growth (30 days)</h3>
+          <canvas id="chart-growth" height="180"></canvas>
+        </div>
+        <div class="bg-gray-900 border border-gray-800 rounded-xl p-5">
+          <h3 class="text-sm font-semibold mb-4">Daily Revenue (30 days)</h3>
+          <canvas id="chart-revenue" height="180"></canvas>
+        </div>
+      </div>
+
+      <!-- MRR breakdown + System Health -->
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div class="bg-gray-900 border border-gray-800 rounded-xl p-5">
+          <h3 class="text-sm font-semibold mb-4">MRR by Plan</h3>
+          <div class="space-y-3">
+            <div class="flex items-center justify-between">
+              <span class="text-xs text-gray-400">Starter</span>
+              <span id="mrr-starter" class="text-sm font-semibold">$0</span>
+            </div>
+            <div class="flex items-center justify-between">
+              <span class="text-xs text-gray-400">Pro</span>
+              <span id="mrr-pro" class="text-sm font-semibold text-indigo-400">$0</span>
+            </div>
+            <div class="flex items-center justify-between">
+              <span class="text-xs text-gray-400">Business</span>
+              <span id="mrr-business" class="text-sm font-semibold text-green-400">$0</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="bg-gray-900 border border-gray-800 rounded-xl p-5">
+          <h3 class="text-sm font-semibold mb-4">System Health</h3>
+          <div class="space-y-3" id="health-details">
+            <p class="text-xs text-gray-400">Loading…</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Quick Actions -->
+      <div class="bg-gray-900 border border-gray-800 rounded-xl p-5">
+        <h3 class="text-sm font-semibold mb-4">Quick Actions</h3>
+        <div class="flex flex-wrap gap-3">
+          <a href="users.html" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 rounded-lg text-sm font-medium transition">View All Users</a>
+          <a href="workspaces.html" class="px-4 py-2 bg-gray-700 hover:bg-gray-600 rounded-lg text-sm font-medium transition">View All Workspaces</a>
+          <a href="payments.html" class="px-4 py-2 bg-gray-700 hover:bg-gray-600 rounded-lg text-sm font-medium transition">Payment Issues</a>
+          <a href="subscriptions.html" class="px-4 py-2 bg-gray-700 hover:bg-gray-600 rounded-lg text-sm font-medium transition">Subscriptions</a>
+          <a href="audit-logs.html" class="px-4 py-2 bg-gray-700 hover:bg-gray-600 rounded-lg text-sm font-medium transition">System Logs</a>
+        </div>
+      </div>
+
+    </div>
+  </main>
+</div>
+
+<script>
+  const API = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
+    ? 'http://localhost:3000/api'
+    : '/api';
+
+  let token = localStorage.getItem('admin_token');
+
+  async function handleLogin() {
+    const email = document.getElementById('login-email').value;
+    const password = document.getElementById('login-password').value;
+    const err = document.getElementById('login-error');
+    err.classList.add('hidden');
+    try {
+      const r = await fetch(`${API}/auth/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password })
+      });
+      const data = await r.json();
+      if (!r.ok) throw new Error(data.error || 'Login failed');
+      if (!data.user || data.user.role !== 'admin') throw new Error('Admin access required');
+      token = data.accessToken;
+      localStorage.setItem('admin_token', token);
+      localStorage.setItem('admin_email', data.user.email);
+      bootstrap();
+    } catch (e) {
+      err.textContent = e.message;
+      err.classList.remove('hidden');
+    }
+  }
+
+  function handleLogout() {
+    localStorage.removeItem('admin_token');
+    localStorage.removeItem('admin_email');
+    location.reload();
+  }
+
+  async function apiFetch(path) {
+    const r = await fetch(`${API}${path}`, { headers: { Authorization: 'Bearer ' + token } });
+    if (r.status === 401 || r.status === 403) { handleLogout(); throw new Error('Unauthorized'); }
+    return r.json();
+  }
+
+  function fmt(n) { return new Intl.NumberFormat().format(n); }
+  function fmtMoney(n) { return '$' + (n || 0).toFixed(2); }
+
+  async function loadDashboard() {
+    try {
+      const [kpis, growth, revenue, health] = await Promise.all([
+        apiFetch('/admin/analytics/dashboard'),
+        apiFetch('/admin/analytics/growth-metrics?days=30'),
+        apiFetch('/admin/analytics/revenue-metrics?days=30'),
+        apiFetch('/admin/system/health')
+      ]);
+
+      document.getElementById('kpi-users').textContent = fmt(kpis.totalUsers);
+      document.getElementById('kpi-workspaces').textContent = fmt(kpis.totalWorkspaces);
+      document.getElementById('kpi-mrr').textContent = fmtMoney(kpis.totalMRR);
+      document.getElementById('kpi-churn').textContent = (kpis.churnRate || 0) + '%';
+      document.getElementById('kpi-active-subs').textContent = fmt(kpis.activeSubscriptions);
+      document.getElementById('kpi-past-due').textContent = fmt(kpis.pastDue);
+      document.getElementById('kpi-trials').textContent = fmt(kpis.trialsEndingSoon);
+      document.getElementById('kpi-active-users').textContent = fmt(kpis.activeUsers);
+      document.getElementById('mrr-starter').textContent = fmtMoney(kpis.mrrByPlan?.starter);
+      document.getElementById('mrr-pro').textContent = fmtMoney(kpis.mrrByPlan?.pro);
+      document.getElementById('mrr-business').textContent = fmtMoney(kpis.mrrByPlan?.business);
+
+      // Health indicator
+      const dot = document.getElementById('health-dot');
+      const hd = document.getElementById('health-details');
+      const isHealthy = health.status === 'healthy';
+      dot.className = `flex items-center gap-1.5 text-xs ${isHealthy ? 'text-green-400' : 'text-red-400'}`;
+      dot.innerHTML = `<span class="w-2 h-2 ${isHealthy ? 'bg-green-400' : 'bg-red-400'} rounded-full ${isHealthy ? 'animate-pulse' : ''}"></span> ${isHealthy ? 'System Healthy' : 'System Degraded'}`;
+      hd.innerHTML = `
+        <div class="flex justify-between text-xs"><span class="text-gray-400">Database</span><span class="${health.database === 'healthy' ? 'text-green-400' : 'text-red-400'}">${health.database}</span></div>
+        <div class="flex justify-between text-xs"><span class="text-gray-400">Redis</span><span class="${health.redis === 'healthy' ? 'text-green-400' : 'text-red-400'}">${health.redis}</span></div>
+        <div class="flex justify-between text-xs"><span class="text-gray-400">Uptime</span><span>${Math.floor(health.uptime / 60)}m ${Math.floor(health.uptime % 60)}s</span></div>
+        <div class="flex justify-between text-xs"><span class="text-gray-400">Heap Used</span><span>${health.memory?.heapUsedMB}MB</span></div>
+      `;
+
+      // Growth chart
+      const gDates = Object.keys(growth.userGrowth || {}).sort();
+      const gValues = gDates.map(d => growth.userGrowth[d]);
+      new Chart(document.getElementById('chart-growth').getContext('2d'), {
+        type: 'line',
+        data: { labels: gDates, datasets: [{ label: 'New Users', data: gValues, borderColor: '#6366f1', backgroundColor: 'rgba(99,102,241,0.1)', fill: true, tension: 0.3 }] },
+        options: { plugins: { legend: { display: false } }, scales: { x: { ticks: { color: '#9ca3af', maxTicksLimit: 7 }, grid: { color: '#1f2937' } }, y: { ticks: { color: '#9ca3af' }, grid: { color: '#1f2937' } } } }
+      });
+
+      // Revenue chart
+      const rDates = Object.keys(revenue.dailyRevenue || {}).sort();
+      const rValues = rDates.map(d => revenue.dailyRevenue[d]);
+      new Chart(document.getElementById('chart-revenue').getContext('2d'), {
+        type: 'bar',
+        data: { labels: rDates, datasets: [{ label: 'Revenue ($)', data: rValues, backgroundColor: 'rgba(34,197,94,0.7)' }] },
+        options: { plugins: { legend: { display: false } }, scales: { x: { ticks: { color: '#9ca3af', maxTicksLimit: 7 }, grid: { color: '#1f2937' } }, y: { ticks: { color: '#9ca3af' }, grid: { color: '#1f2937' } } } }
+      });
+
+    } catch (e) {
+      console.error('Dashboard load error:', e);
+    }
+  }
+
+  function bootstrap() {
+    document.getElementById('auth-gate').classList.add('hidden');
+    document.getElementById('app').classList.remove('hidden');
+    document.getElementById('admin-email').textContent = localStorage.getItem('admin_email') || '';
+    lucide.createIcons();
+    loadDashboard();
+  }
+
+  if (token) {
+    bootstrap();
+  } else {
+    document.getElementById('auth-gate').classList.remove('hidden');
+    lucide.createIcons();
+  }
+
+  document.getElementById('login-password').addEventListener('keydown', e => { if (e.key === 'Enter') handleLogin(); });
+</script>
+</body>
+</html>

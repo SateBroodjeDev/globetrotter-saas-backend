@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full bg-gray-950">
+<head>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Subscriptions – Globetrotter Admin</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <style>body { font-family: system-ui, sans-serif; }</style>
+</head>
+<body class="h-full text-gray-100 bg-gray-950">
+
+<div id="auth-gate" class="fixed inset-0 bg-gray-950 z-50 flex items-center justify-center p-4">
+  <div class="bg-gray-900 border border-gray-700 rounded-2xl p-8 w-full max-w-sm space-y-5 shadow-2xl">
+    <div class="text-center"><div class="w-14 h-14 bg-indigo-600 rounded-xl flex items-center justify-center mx-auto mb-3"><i data-lucide="shield" class="w-7 h-7 text-white"></i></div><h1 class="text-xl font-bold">Admin Panel</h1></div>
+    <input id="login-email" type="email" placeholder="Admin email" class="w-full bg-gray-800 border border-gray-600 rounded-xl px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none">
+    <input id="login-password" type="password" placeholder="Password" class="w-full bg-gray-800 border border-gray-600 rounded-xl px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none">
+    <button onclick="handleLogin()" class="w-full py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold rounded-xl text-sm transition">Sign In</button>
+    <p id="login-error" class="text-xs text-red-400 text-center hidden"></p>
+  </div>
+</div>
+
+<!-- Override modal -->
+<div id="override-modal" class="fixed inset-0 bg-black/60 z-40 hidden flex items-center justify-center p-4">
+  <div class="bg-gray-900 border border-gray-700 rounded-2xl w-full max-w-md p-6 space-y-4">
+    <h3 class="font-semibold">Override Subscription</h3>
+    <div class="space-y-3">
+      <div>
+        <label class="text-xs text-gray-400">Plan</label>
+        <select id="override-plan" class="w-full mt-1 bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm focus:outline-none">
+          <option value="starter">Starter</option>
+          <option value="pro">Pro</option>
+          <option value="business">Business</option>
+        </select>
+      </div>
+      <div>
+        <label class="text-xs text-gray-400">Status</label>
+        <select id="override-status" class="w-full mt-1 bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm focus:outline-none">
+          <option value="active">Active</option>
+          <option value="trialing">Trialing</option>
+          <option value="past_due">Past Due</option>
+          <option value="canceled">Canceled</option>
+        </select>
+      </div>
+    </div>
+    <div class="flex gap-3">
+      <button id="override-confirm" class="flex-1 py-2 bg-indigo-600 hover:bg-indigo-500 rounded-lg text-sm font-medium">Apply Override</button>
+      <button onclick="document.getElementById('override-modal').classList.add('hidden')" class="px-4 py-2 bg-gray-700 hover:bg-gray-600 rounded-lg text-sm">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<div id="app" class="hidden h-full flex">
+  <aside class="w-64 bg-gray-900 border-r border-gray-800 flex flex-col shrink-0">
+    <div class="px-5 py-5 border-b border-gray-800"><a href="dashboard.html" class="flex items-center gap-3"><div class="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center"><i data-lucide="compass" class="w-4 h-4 text-white"></i></div><span class="font-bold text-sm">Globetrotter Admin</span></a></div>
+    <nav class="flex-1 px-3 py-4 space-y-1">
+      <a href="dashboard.html" class="flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm text-gray-400 hover:bg-gray-800 hover:text-white"><i data-lucide="layout-dashboard" class="w-4 h-4"></i> Dashboard</a>
+      <a href="users.html" class="flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm text-gray-400 hover:bg-gray-800 hover:text-white"><i data-lucide="users" class="w-4 h-4"></i> Users</a>
+      <a href="workspaces.html" class="flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm text-gray-400 hover:bg-gray-800 hover:text-white"><i data-lucide="building-2" class="w-4 h-4"></i> Workspaces</a>
+      <a href="subscriptions.html" class="flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm bg-indigo-600 text-white"><i data-lucide="credit-card" class="w-4 h-4"></i> Subscriptions</a>
+      <a href="payments.html" class="flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm text-gray-400 hover:bg-gray-800 hover:text-white"><i data-lucide="receipt" class="w-4 h-4"></i> Payments</a>
+      <a href="analytics.html" class="flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm text-gray-400 hover:bg-gray-800 hover:text-white"><i data-lucide="bar-chart-2" class="w-4 h-4"></i> Analytics</a>
+      <a href="audit-logs.html" class="flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm text-gray-400 hover:bg-gray-800 hover:text-white"><i data-lucide="scroll-text" class="w-4 h-4"></i> Audit Logs</a>
+      <a href="settings.html" class="flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm text-gray-400 hover:bg-gray-800 hover:text-white"><i data-lucide="settings" class="w-4 h-4"></i> Settings</a>
+    </nav>
+    <div class="px-3 py-4 border-t border-gray-800"><button onclick="handleLogout()" class="flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm text-red-400 hover:bg-red-950 w-full"><i data-lucide="log-out" class="w-4 h-4"></i> Logout</button></div>
+  </aside>
+
+  <main class="flex-1 overflow-y-auto">
+    <header class="bg-gray-900 border-b border-gray-800 px-6 py-4 flex items-center justify-between sticky top-0 z-10">
+      <h2 class="font-semibold text-lg">Subscriptions</h2>
+      <span id="admin-email" class="text-xs text-gray-400"></span>
+    </header>
+    <div class="p-6 space-y-4">
+      <!-- Summary cards -->
+      <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <div class="bg-gray-900 border border-gray-800 rounded-xl p-4"><p class="text-xs text-gray-400">Active</p><p id="cnt-active" class="text-2xl font-bold text-green-400 mt-1">—</p></div>
+        <div class="bg-gray-900 border border-gray-800 rounded-xl p-4"><p class="text-xs text-gray-400">Trialing</p><p id="cnt-trial" class="text-2xl font-bold text-indigo-400 mt-1">—</p></div>
+        <div class="bg-gray-900 border border-gray-800 rounded-xl p-4"><p class="text-xs text-gray-400">Past Due</p><p id="cnt-due" class="text-2xl font-bold text-red-400 mt-1">—</p></div>
+        <div class="bg-gray-900 border border-gray-800 rounded-xl p-4"><p class="text-xs text-gray-400">Canceled</p><p id="cnt-canceled" class="text-2xl font-bold text-gray-400 mt-1">—</p></div>
+      </div>
+
+      <div class="flex flex-wrap gap-3">
+        <select id="status-filter" onchange="currentPage=1;loadSubs()" class="bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm focus:outline-none">
+          <option value="">All statuses</option>
+          <option value="active">Active</option>
+          <option value="trialing">Trialing</option>
+          <option value="past_due">Past Due</option>
+          <option value="canceled">Canceled</option>
+        </select>
+        <select id="plan-filter" onchange="currentPage=1;loadSubs()" class="bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm focus:outline-none">
+          <option value="">All plans</option>
+          <option value="starter">Starter</option>
+          <option value="pro">Pro</option>
+          <option value="business">Business</option>
+        </select>
+      </div>
+
+      <div class="bg-gray-900 border border-gray-800 rounded-xl overflow-hidden">
+        <table class="w-full text-sm">
+          <thead class="bg-gray-800 text-gray-400 text-xs uppercase">
+            <tr>
+              <th class="px-4 py-3 text-left">Workspace</th>
+              <th class="px-4 py-3 text-left">Plan</th>
+              <th class="px-4 py-3 text-left">Status</th>
+              <th class="px-4 py-3 text-left">Price/mo</th>
+              <th class="px-4 py-3 text-left">Renewal</th>
+              <th class="px-4 py-3 text-left">Actions</th>
+            </tr>
+          </thead>
+          <tbody id="subs-tbody" class="divide-y divide-gray-800">
+            <tr><td colspan="6" class="px-4 py-6 text-center text-gray-500">Loading…</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="flex items-center justify-between text-sm text-gray-400">
+        <span id="page-info">—</span>
+        <div class="flex gap-2">
+          <button id="btn-prev" onclick="changePage(-1)" class="px-3 py-1.5 bg-gray-800 hover:bg-gray-700 rounded-lg">Prev</button>
+          <button id="btn-next" onclick="changePage(1)" class="px-3 py-1.5 bg-gray-800 hover:bg-gray-700 rounded-lg">Next</button>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<script src="_admin.js"></script>
+<script>
+  let currentPage = 1, totalPages = 1;
+
+  async function loadSummary() {
+    try {
+      const data = await adminFetch('/admin/analytics/churn');
+      document.getElementById('cnt-active').textContent = fmt(data.byStatus?.active);
+      document.getElementById('cnt-trial').textContent = fmt(data.byStatus?.trialing);
+      document.getElementById('cnt-due').textContent = fmt(data.byStatus?.past_due);
+      document.getElementById('cnt-canceled').textContent = fmt(data.byStatus?.canceled);
+    } catch(e) {}
+  }
+
+  async function loadSubs() {
+    const status = document.getElementById('status-filter').value;
+    const plan = document.getElementById('plan-filter').value;
+    let url = `/admin/subscriptions?page=${currentPage}&limit=20`;
+    if (status) url += `&status=${status}`;
+    if (plan) url += `&plan=${plan}`;
+    try {
+      const data = await adminFetch(url);
+      totalPages = data.pages || 1;
+      document.getElementById('page-info').textContent = `Page ${currentPage} of ${totalPages} (${fmt(data.total)} subscriptions)`;
+      const tbody = document.getElementById('subs-tbody');
+      if (!data.subscriptions || data.subscriptions.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="6" class="px-4 py-6 text-center text-gray-500">No subscriptions found</td></tr>';
+        return;
+      }
+      const statusColor = { active: 'bg-green-900 text-green-300', trialing: 'bg-indigo-900 text-indigo-300', past_due: 'bg-red-900 text-red-300', canceled: 'bg-gray-700 text-gray-400' };
+      const planColor = { starter: 'bg-gray-700 text-gray-300', pro: 'bg-indigo-900 text-indigo-300', business: 'bg-green-900 text-green-300' };
+      tbody.innerHTML = data.subscriptions.map(s => `
+        <tr class="hover:bg-gray-800/50">
+          <td class="px-4 py-3 font-medium">${s.workspace?.name || '—'}</td>
+          <td class="px-4 py-3"><span class="px-2 py-0.5 rounded text-xs ${planColor[s.plan] || ''}">${s.plan}</span></td>
+          <td class="px-4 py-3"><span class="px-2 py-0.5 rounded text-xs ${statusColor[s.status] || ''}">${s.status}</span></td>
+          <td class="px-4 py-3 text-gray-300">${fmtMoney(s.pricePerMonth)}</td>
+          <td class="px-4 py-3 text-gray-400 text-xs">${fmtDate(s.currentPeriodEnd)}</td>
+          <td class="px-4 py-3">
+            <div class="flex gap-2">
+              <button onclick="openOverride('${s.id}', '${s.plan}', '${s.status}')" class="text-xs px-2 py-1 bg-indigo-900 hover:bg-indigo-800 text-indigo-300 rounded">Override</button>
+              <button onclick="cancelSub('${s.id}')" class="text-xs px-2 py-1 bg-red-900 hover:bg-red-800 text-red-300 rounded">Cancel</button>
+            </div>
+          </td>
+        </tr>
+      `).join('');
+    } catch(e) { console.error(e); }
+  }
+
+  function changePage(delta) { currentPage = Math.max(1, Math.min(totalPages, currentPage + delta)); loadSubs(); }
+
+  let overrideId = null;
+  function openOverride(id, plan, status) {
+    overrideId = id;
+    document.getElementById('override-plan').value = plan;
+    document.getElementById('override-status').value = status;
+    document.getElementById('override-modal').classList.remove('hidden');
+    document.getElementById('override-confirm').onclick = applyOverride;
+  }
+
+  async function applyOverride() {
+    const plan = document.getElementById('override-plan').value;
+    const status = document.getElementById('override-status').value;
+    try {
+      await adminFetch(`/admin/subscriptions/${overrideId}/override`, { method: 'POST', body: JSON.stringify({ plan, status }) });
+      showToast('Subscription updated');
+      document.getElementById('override-modal').classList.add('hidden');
+      loadSubs();
+    } catch(e) { showToast('Failed', 'error'); }
+  }
+
+  async function cancelSub(id) {
+    if (!confirm('Cancel this subscription?')) return;
+    try { await adminFetch(`/admin/subscriptions/${id}/cancel`, { method: 'POST' }); showToast('Subscription canceled'); loadSubs(); loadSummary(); } catch(e) { showToast('Failed', 'error'); }
+  }
+
+  function bootstrap() {
+    document.getElementById('auth-gate').classList.add('hidden');
+    document.getElementById('app').classList.remove('hidden');
+    document.getElementById('admin-email').textContent = localStorage.getItem('admin_email') || '';
+    lucide.createIcons();
+    loadSummary();
+    loadSubs();
+  }
+  requireAdminAuth(bootstrap);
+</script>
+</body>
+</html>
