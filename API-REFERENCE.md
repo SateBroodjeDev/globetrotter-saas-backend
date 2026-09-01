@@ -129,7 +129,7 @@ Get trip statistics (budget, expenses, days).
 ## Expenses
 
 ### GET /expenses/trip/:tripId
-List all expenses for a trip.
+List trip expenses (supports `startDate`, `endDate`, `category`, `participant` query filters).
 
 ### POST /expenses
 Add an expense.
@@ -140,28 +140,37 @@ Add an expense.
   "tripId": "uuid",
   "description": "Hotel Shinjuku",
   "amount": 120.00,
-  "currency": "EUR",
+  "originalCurrency": "USD",
   "date": "2025-04-01",
-  "category": "accommodation",
-  "splitBetween": ["user-id-1", "user-id-2"]
+  "category": "hotel",
+  "splitType": "equal",
+  "participants": ["user-id-1", "user-id-2"],
+  "receipt": "https://cdn.example.com/receipts/123.jpg"
 }
 ```
 
-Categories: `flights`, `accommodation`, `meals`, `transport`, `activities`, `shopping`, `other`
+Categories: `food`, `transport`, `hotel`, `activities`, `shopping`, `drinks`, `services`, `other`
 
-### GET /expenses/trip/:tripId/balances
-Calculate settlement balances (Groupie algorithm).
+### GET /expenses/trip/:tripId/summary
+Get category breakdown and totals.
 
-**Response:**
-```json
-{
-  "balances": { "user-id-1": 50.00, "user-id-2": -50.00 },
-  "transfers": [
-    { "from": "user-id-2", "to": "user-id-1", "amount": 50.00 }
-  ],
-  "summary": { "totalTransfers": 1, "totalSettlement": 50.00 }
-}
-```
+### PUT /expenses/:expenseId
+Update an expense.
+
+### GET /expenses/:expenseId/receipt
+Get expense receipt image URL.
+
+### POST /trips/:tripId/calculate-settlement
+Calculate and persist settlement transactions.
+
+### GET /trips/:tripId/balances
+Get per-person balances and settlement plan.
+
+### POST /settlements/:settlementId/mark-paid
+Mark settlement as paid (optional `proofImage` in body).
+
+### GET /settlements/:tripId/history
+Get settlement history with timestamps and proof images.
 
 ### DELETE /expenses/:expenseId
 Soft-delete an expense.
@@ -235,7 +244,10 @@ Delete a checklist.
 View a shared trip (no auth required).
 
 ### GET /currency/exchange
-Get current exchange rates.
+Get current/historical exchange rates (`?date=YYYY-MM-DD`).
+
+### GET /currency/supported
+Get supported common travel currencies for dropdowns.
 
 ---
 

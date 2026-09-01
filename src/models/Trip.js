@@ -71,6 +71,7 @@ module.exports = (sequelize) => {
     Trip.belongsTo(models.User, { foreignKey: 'createdBy', as: 'creator' });
     Trip.hasMany(models.Day, { foreignKey: 'tripId', as: 'days' });
     Trip.hasMany(models.Expense, { foreignKey: 'tripId', as: 'expenses' });
+    Trip.hasMany(models.Settlement, { foreignKey: 'tripId', as: 'settlements' });
     Trip.hasMany(models.Booking, { foreignKey: 'tripId', as: 'bookings' });
     Trip.hasMany(models.Checklist, { foreignKey: 'tripId', as: 'checklists' });
     Trip.belongsToMany(models.User, { through: models.TripMember, as: 'members' });

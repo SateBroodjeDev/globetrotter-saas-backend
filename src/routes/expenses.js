@@ -1,63 +1,53 @@
 const express = require('express');
-const { authenticate, authorizeWorkspace } = require('../middleware/auth');
+const { authenticate } = require('../middleware/auth');
 const { asyncHandler } = require('../middleware/errorHandler');
-const { validateExpense } = require('../middleware/validation');
+const {
+  validateJoi,
+  createExpenseSchema,
+  updateExpenseSchema,
+  expenseFiltersSchema
+} = require('../middleware/validation');
 const expenseService = require('../services/expenseService');
-const { db } = require('../config/database');
 
 const router = express.Router();
 
 // Create expense
-router.post('/', authenticate, validateExpense.create, asyncHandler(async (req, res) => {
-  const { tripId, description, amount, currency, date, category, splitBetween } = req.body;
-  
-  const expense = await expenseService.createExpense(tripId, {
-    description,
-    amount,
-    currency,
-    date,
-    category,
-    splitBetween
-  }, req.user.userId);
+router.post('/', authenticate, validateJoi(createExpenseSchema), asyncHandler(async (req, res) => {
+  const { tripId, ...expenseData } = req.body;
+  const expense = await expenseService.createExpense(tripId, expenseData, req.user.userId);
 
   res.status(201).json({ message: 'Expense created', expense });
 }));
 
 // Get trip expenses
-router.get('/trip/:tripId', authenticate, asyncHandler(async (req, res) => {
-  const expenses = await db.Expense.findAll({
-    where: { tripId: req.params.tripId, isDeleted: false },
-    include: { association: 'payer', attributes: { exclude: ['passwordHash'] } },
-    order: [['date', 'DESC']]
-  });
+router.get('/trip/:tripId', authenticate, validateJoi(expenseFiltersSchema, 'query'), asyncHandler(async (req, res) => {
+  const expenses = await expenseService.getTripExpenses(req.params.tripId, req.query, req.user.userId);
 
   res.json({ expenses });
 }));
 
-// Calculate balances for trip
-router.get('/trip/:tripId/balances', authenticate, asyncHandler(async (req, res) => {
-  const { balances, transfers } = await expenseService.calculateBalances(req.params.tripId);
-  
-  res.json({
-    balances,
-    transfers,
-    summary: {
-      totalTransfers: transfers.length,
-      totalSettlement: transfers.reduce((sum, t) => sum + t.amount, 0)
-    }
-  });
+// Category totals and summary
+router.get('/trip/:tripId/summary', authenticate, validateJoi(expenseFiltersSchema, 'query'), asyncHandler(async (req, res) => {
+  const summary = await expenseService.getExpenseSummary(req.params.tripId, req.query, req.user.userId);
+  res.json(summary);
+}));
+
+// Update expense
+router.put('/:expenseId', authenticate, validateJoi(updateExpenseSchema), asyncHandler(async (req, res) => {
+  const expense = await expenseService.updateExpense(req.params.expenseId, req.body, req.user.userId);
+  res.json({ message: 'Expense updated', expense });
 }));
 
 // Delete expense
 router.delete('/:expenseId', authenticate, asyncHandler(async (req, res) => {
-  const expense = await db.Expense.findByPk(req.params.expenseId);
-  
-  if (!expense) {
-    return res.status(404).json({ error: 'Expense not found' });
-  }
-
-  await expense.update({ isDeleted: true });
+  await expenseService.deleteExpense(req.params.expenseId, req.user.userId);
   res.json({ message: 'Expense deleted' });
+}));
+
+// Get expense receipt URL
+router.get('/:expenseId/receipt', authenticate, asyncHandler(async (req, res) => {
+  const receipt = await expenseService.getReceipt(req.params.expenseId, req.user.userId);
+  res.json({ receipt });
 }));
 
 module.exports = router;
