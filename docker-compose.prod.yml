@@ -1,0 +1,59 @@
+version: '1'
+services:
+  globetrotter-api:
+    image: globetrotter-saas:latest
+    container_name: globetrotter_api_prod
+    restart: always
+    environment:
+      NODE_ENV: production
+      DATABASE_URL: postgresql://globetrotter:${DB_PASSWORD}@postgres:5432/globetrotter_db
+      REDIS_URL: redis://redis:6379
+      JWT_SECRET: ${JWT_SECRET}
+      STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY}
+    ports:
+      - "3000:3000"
+    depends_on:
+      - postgres
+      - redis
+    networks:
+      - globetrotter
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  postgres:
+    image: postgres:15-alpine
+    container_name: globetrotter_postgres_prod
+    restart: always
+    environment:
+      POSTGRES_DB: globetrotter_db
+      POSTGRES_USER: globetrotter
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+    volumes:
+      - postgres_prod_data:/var/lib/postgresql/data
+    networks:
+      - globetrotter
+    ports:
+      - "5432:5432"
+
+  redis:
+    image: redis:7-alpine
+    container_name: globetrotter_redis_prod
+    restart: always
+    volumes:
+      - redis_prod_data:/data
+    networks:
+      - globetrotter
+    ports:
+      - "6379:6379"
+    command: redis-server --appendonly yes
+
+volumes:
+  postgres_prod_data:
+  redis_prod_data:
+
+networks:
+  globetrotter:
+    driver: bridge
