@@ -3,11 +3,12 @@ const { asyncHandler } = require('../middleware/errorHandler');
 const { validateAuth } = require('../middleware/validation');
 const authService = require('../services/authService');
 const { generateToken } = require('../middleware/auth');
+const { authLimiter } = require('../middleware/rateLimiter');
 
 const router = express.Router();
 
 // Register
-router.post('/register', validateAuth.register, asyncHandler(async (req, res) => {
+router.post('/register', authLimiter, validateAuth.register, asyncHandler(async (req, res) => {
   const { email, password, firstName, lastName } = req.body;
   const result = await authService.register(email, password, firstName, lastName);
   
@@ -20,7 +21,7 @@ router.post('/register', validateAuth.register, asyncHandler(async (req, res) =>
 }));
 
 // Login
-router.post('/login', validateAuth.login, asyncHandler(async (req, res) => {
+router.post('/login', authLimiter, validateAuth.login, asyncHandler(async (req, res) => {
   const { email, password } = req.body;
   authService.clientIp = req.ip;
   const result = await authService.login(email, password);
