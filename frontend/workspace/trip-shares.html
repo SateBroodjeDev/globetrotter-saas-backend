@@ -122,9 +122,9 @@
 
   <script>
     const API = '/api';
-    let token = localStorage.getItem('gt_token');
+    let token = localStorage.getItem('accessToken');
     let workspaces = [];
-    let currentWorkspaceId = localStorage.getItem('gt_workspace');
+    let currentWorkspaceId = localStorage.getItem('workspaceId');
     let currentShares = [];
     let selectedShareId = null;
 
@@ -149,8 +149,8 @@
     }
 
     function logout() {
-      localStorage.removeItem('gt_token');
-      localStorage.removeItem('gt_workspace');
+      localStorage.removeItem('accessToken');
+      localStorage.removeItem('workspaceId');
       location.reload();
     }
 
@@ -172,11 +172,11 @@
         }
 
         token = data.accessToken || data.token;
-        localStorage.setItem('gt_token', token);
+        localStorage.setItem('accessToken', token);
         workspaces = data.workspaces || [];
         if (!currentWorkspaceId && workspaces[0]?.id) {
           currentWorkspaceId = workspaces[0].id;
-          localStorage.setItem('gt_workspace', currentWorkspaceId);
+          localStorage.setItem('workspaceId', currentWorkspaceId);
         }
         await showApp();
       } catch (error) {
@@ -202,7 +202,7 @@
       workspaces = data.workspaces || [];
       if (!currentWorkspaceId && workspaces[0]?.id) {
         currentWorkspaceId = workspaces[0].id;
-        localStorage.setItem('gt_workspace', currentWorkspaceId);
+        localStorage.setItem('workspaceId', currentWorkspaceId);
       }
     }
 
@@ -390,7 +390,7 @@
     document.getElementById('refresh-button').addEventListener('click', () => Promise.all([loadTrips(), loadShares()]));
     document.getElementById('workspace-select').addEventListener('change', async (event) => {
       currentWorkspaceId = event.target.value;
-      localStorage.setItem('gt_workspace', currentWorkspaceId);
+      localStorage.setItem('workspaceId', currentWorkspaceId);
       await Promise.all([loadTrips(), loadShares()]);
     });
     document.getElementById('create-share-form').addEventListener('submit', createShare);

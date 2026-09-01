@@ -427,10 +427,22 @@ class EmailService {
       include: [{ model: db.User, attributes: ['id', 'email', 'firstName'] }]
     });
 
-    // Gather all outstanding settlements for the workspace
-    const allSettlements = await db.Settlement.findAll({
-      where: { workspaceId, status: { [Op.in]: ['pending', 'partial'] } }
+    // Gather all workspace trips then find pending settlements via tripId
+    const trips = await db.Trip.findAll({
+      where: { workspaceId, isDeleted: false },
+      attributes: ['id']
     });
+    const tripIds = trips.map(t => t.id);
+
+    const allSettlements = tripIds.length
+      ? await db.Settlement.findAll({
+          where: { tripId: tripIds, status: 'pending' },
+          include: [
+            { model: db.User, as: 'fromUser', attributes: ['id', 'firstName'] },
+            { model: db.User, as: 'toUser', attributes: ['id', 'firstName'] }
+          ]
+        })
+      : [];
 
     for (const membership of memberships) {
       if (!membership.User) continue;
@@ -440,7 +452,7 @@ class EmailService {
       const prefs = await db.EmailPreference.findOne({ where: { userId: user.id } });
       if (prefs && (prefs.settlementReminders === 'off' || prefs.unsubscribedAt)) continue;
 
-      const userSettlements = allSettlements.filter(s => s.fromUserId === user.id || s.toUserId === user.id);
+      const userSettlements = allSettlements.filter(s => s.from === user.id || s.to === user.id);
       if (userSettlements.length === 0) continue;
 
       try {
@@ -450,8 +462,8 @@ class EmailService {
           workspace.name,
           workspaceId,
           userSettlements.map(s => ({
-            fromName: s.fromUserId === user.id ? 'You' : s.fromUserId,
-            toName: s.toUserId === user.id ? 'You' : s.toUserId,
+            fromName: s.from === user.id ? 'You' : (s.fromUser && s.fromUser.firstName) || s.from,
+            toName: s.to === user.id ? 'You' : (s.toUser && s.toUser.firstName) || s.to,
             amount: s.amount
           }))
         );

@@ -31,6 +31,9 @@ app.use(cors({
 app.use(morgan('combined'));
 app.use(requestLogger);
 
+// Stripe webhook MUST be registered before express.json() so the raw body is preserved
+app.post('/api/payments/webhook', express.raw({ type: 'application/json' }), require('./routes/payments').webhookHandler);
+
 // Body Parser
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ limit: '10mb', extended: true }));
