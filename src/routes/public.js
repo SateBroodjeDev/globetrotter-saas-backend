@@ -1,5 +1,6 @@
 const express = require('express');
 const { asyncHandler } = require('../middleware/errorHandler');
+const { validateJoi, shareCommentSchema } = require('../middleware/validation');
 const { db } = require('../config/database');
 const currencyService = require('../services/currencyService');
 const shareService = require('../services/shareService');
@@ -80,11 +81,17 @@ router.post('/trips/:shareToken/comments', asyncHandler(async (req, res) => {
   const share = await shareService.getActiveShareByToken(req.params.shareToken);
   const viewer = await getOptionalViewer(req);
   await shareService.assertViewerAccess(share, viewer);
+
+  const { error, value } = shareCommentSchema.validate(req.body, { abortEarly: false, stripUnknown: true });
+  if (error) {
+    return res.status(400).json({ error: 'Validation failed', details: error.details.map(d => d.message) });
+  }
+
   const comment = await shareService.addComment(
     share.id,
-    req.body.visitorName,
-    req.body.visitorEmail,
-    req.body.comment
+    value.visitorName,
+    value.visitorEmail,
+    value.comment
   );
 
   res.status(201).json({

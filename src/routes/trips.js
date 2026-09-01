@@ -134,6 +134,24 @@ router.get('/:tripId/stats', authenticate, requireWorkspaceAccess(), asyncHandle
   res.json({ stats });
 }));
 
+// Get single trip
+router.get('/:tripId', authenticate, requireWorkspaceAccess(), asyncHandler(async (req, res) => {
+  const trip = await tripService.getTrip(req.params.tripId, req.user.id);
+  res.json({ trip });
+}));
+
+// Update trip
+router.put('/:tripId', authenticate, requireWorkspaceAccess(), asyncHandler(async (req, res) => {
+  const trip = await tripService.updateTrip(req.params.tripId, req.user.id, req.body);
+  res.json({ trip });
+}));
+
+// Delete trip
+router.delete('/:tripId', authenticate, requireWorkspaceAccess(), asyncHandler(async (req, res) => {
+  const result = await tripService.deleteTrip(req.params.tripId, req.user.id);
+  res.json(result);
+}));
+
 // Generate share token
 router.post('/:tripId/share', authenticate, asyncHandler(async (req, res) => {
   const share = await shareService.createShare(req.params.tripId, req.user.id, req.body || {});

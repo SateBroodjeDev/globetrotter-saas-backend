@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full bg-slate-950">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Verify Email — Globetrotter</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap');
+    body { font-family: 'Plus Jakarta Sans', sans-serif; }
+    .glass-card { background: rgba(30, 41, 59, 0.75); backdrop-filter: blur(14px); border: 1px solid rgba(255,255,255,0.08); }
+  </style>
+</head>
+<body class="h-full bg-slate-950 text-slate-100 flex items-center justify-center p-4 min-h-screen">
+  <div class="glass-card rounded-3xl p-8 max-w-md w-full shadow-2xl space-y-6 text-center">
+    <div>
+      <div id="icon-verifying" class="p-3.5 bg-gradient-to-tr from-sky-600 to-indigo-600 rounded-2xl text-white flex items-center justify-center mx-auto mb-4 w-16 h-16">
+        <i data-lucide="loader" class="w-8 h-8 animate-spin"></i>
+      </div>
+      <div id="icon-success" class="hidden p-3.5 bg-gradient-to-tr from-green-600 to-emerald-600 rounded-2xl text-white flex items-center justify-center mx-auto mb-4 w-16 h-16">
+        <i data-lucide="check-circle" class="w-8 h-8"></i>
+      </div>
+      <div id="icon-error" class="hidden p-3.5 bg-gradient-to-tr from-red-600 to-rose-600 rounded-2xl text-white flex items-center justify-center mx-auto mb-4 w-16 h-16">
+        <i data-lucide="x-circle" class="w-8 h-8"></i>
+      </div>
+
+      <h1 id="title" class="text-2xl font-extrabold text-white">Verifying Email...</h1>
+      <p id="subtitle" class="text-sm text-slate-400 mt-2">Please wait a moment</p>
+    </div>
+
+    <div id="check-inbox" class="hidden space-y-4">
+      <p class="text-slate-300 text-sm">We sent a verification email to <span id="user-email" class="text-sky-400 font-medium"></span>.</p>
+      <p class="text-slate-400 text-xs">Check your inbox and click the link to verify your account.</p>
+      <a href="/auth/login.html"
+        class="inline-block py-2.5 px-6 bg-gradient-to-r from-sky-600 to-indigo-600 text-white font-semibold rounded-xl transition-all text-sm">
+        Go to Login
+      </a>
+    </div>
+
+    <div id="resend-section" class="hidden space-y-3">
+      <p class="text-slate-400 text-sm">The verification link may have expired.</p>
+      <button id="resend-btn"
+        class="py-2.5 px-6 bg-sky-600 hover:bg-sky-500 text-white font-semibold rounded-xl transition-all text-sm">
+        Resend Verification Email
+      </button>
+      <br>
+      <a href="/auth/login.html" class="text-sm text-sky-400 hover:text-sky-300">&larr; Back to login</a>
+    </div>
+  </div>
+
+  <script>
+    lucide.createIcons();
+
+    const params = new URLSearchParams(window.location.search);
+    const token = params.get('token');
+    const email = params.get('email');
+
+    const title = document.getElementById('title');
+    const subtitle = document.getElementById('subtitle');
+
+    if (email) {
+      document.getElementById('user-email').textContent = email;
+    }
+
+    function showSuccess() {
+      document.getElementById('icon-verifying').classList.add('hidden');
+      document.getElementById('icon-success').classList.remove('hidden');
+      title.textContent = 'Email Verified!';
+      subtitle.textContent = 'Redirecting to login...';
+      setTimeout(() => { window.location.href = '/auth/login.html?verified=1'; }, 2000);
+    }
+
+    function showError() {
+      document.getElementById('icon-verifying').classList.add('hidden');
+      document.getElementById('icon-error').classList.remove('hidden');
+      title.textContent = 'Verification Failed';
+      subtitle.textContent = '';
+      document.getElementById('resend-section').classList.remove('hidden');
+    }
+
+    function showCheckInbox() {
+      document.getElementById('icon-verifying').classList.add('hidden');
+      document.getElementById('icon-success').classList.remove('hidden');
+      title.textContent = 'Check Your Email';
+      subtitle.textContent = '';
+      document.getElementById('check-inbox').classList.remove('hidden');
+    }
+
+    if (token) {
+      fetch('/api/auth/verify-email/' + token, { method: 'POST' })
+        .then(r => r.ok ? showSuccess() : showError())
+        .catch(() => showError());
+    } else if (email) {
+      showCheckInbox();
+    } else {
+      showError();
+    }
+
+    document.getElementById('resend-btn')?.addEventListener('click', async () => {
+      const emailInput = prompt('Enter your email address:');
+      if (!emailInput) return;
+      try {
+        await fetch('/api/auth/resend-verification', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email: emailInput })
+        });
+        alert('Verification email sent! Check your inbox.');
+      } catch {
+        alert('Failed to resend. Please try again.');
+      }
+    });
+  </script>
+</body>
+</html>

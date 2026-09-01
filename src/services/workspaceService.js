@@ -313,7 +313,7 @@ class WorkspaceService {
     }
 
     const { invitation, token } = await this.createInvitation(workspaceId, normalizedEmail, role, invitedByUserId);
-    const invitationLink = `${process.env.FRONTEND_URL || 'https://app.globetrotter.io'}/invite?token=${token}`;
+    const invitationLink = `${process.env.FRONTEND_URL || 'https://app.globetrotter.io'}/workspace/invite/${token}`;
     await emailService.sendWorkspaceInvitation(
       normalizedEmail,
       workspace.name,
@@ -497,7 +497,7 @@ class WorkspaceService {
     });
 
     const invitedBy = invitedByUserId ? await db.User.findByPk(invitedByUserId) : null;
-    const invitationLink = `${process.env.FRONTEND_URL || 'https://app.globetrotter.io'}/invite?token=${nextToken}`;
+    const invitationLink = `${process.env.FRONTEND_URL || 'https://app.globetrotter.io'}/workspace/invite/${nextToken}`;
     await emailService.sendWorkspaceInvitation(
       invitation.email,
       workspace.name,

@@ -1,6 +1,7 @@
 const express = require('express');
 const { authenticate, requireWorkspaceAccess } = require('../middleware/auth');
 const { asyncHandler } = require('../middleware/errorHandler');
+const { validateJoi, bookingSchema } = require('../middleware/validation');
 const { db } = require('../config/database');
 
 const router = express.Router();
@@ -15,7 +16,7 @@ router.get('/trip/:tripId', authenticate, asyncHandler(async (req, res) => {
 }));
 
 // Add booking
-router.post('/', authenticate, requireWorkspaceAccess(), asyncHandler(async (req, res) => {
+router.post('/', authenticate, requireWorkspaceAccess(), validateJoi(bookingSchema), asyncHandler(async (req, res) => {
   const { tripId, type, provider, bookingReference, date, location, price, currency, status, notes } = req.body;
 
   const trip = await db.Trip.findByPk(tripId);

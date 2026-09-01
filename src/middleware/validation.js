@@ -209,6 +209,42 @@ const validateJoi = (schema, source = 'body') => (req, res, next) => {
   next();
 };
 
+const bookingSchema = Joi.object({
+  tripId: Joi.string().uuid().required(),
+  type: Joi.string().valid('flight', 'hotel', 'rental-car', 'train', 'bus', 'other').required(),
+  provider: Joi.string().max(255).allow(null, ''),
+  bookingReference: Joi.string().max(255).allow(null, ''),
+  date: Joi.date().required(),
+  location: Joi.string().max(500).allow(null, ''),
+  price: Joi.number().min(0),
+  currency: Joi.string().length(3).uppercase(),
+  status: Joi.string().valid('confirmed', 'pending', 'cancelled').default('confirmed'),
+  notes: Joi.string().max(1000).allow(null, '')
+});
+
+const checklistSchema = Joi.object({
+  tripId: Joi.string().uuid().required(),
+  title: Joi.string().required().max(255),
+  items: Joi.array().items(
+    Joi.object({
+      text: Joi.string().required().max(500),
+      completed: Joi.boolean().default(false),
+      assignedTo: Joi.string().uuid().allow(null, '')
+    })
+  ).default([])
+});
+
+const shareCommentSchema = Joi.object({
+  visitorName: Joi.string().required().max(255),
+  visitorEmail: Joi.string().email().optional().allow(null, ''),
+  comment: Joi.string().required().max(2000)
+});
+
+const checkoutSchema = Joi.object({
+  priceId: Joi.string().required(),
+  workspaceId: Joi.string().uuid().required()
+});
+
 module.exports = {
   validateAuth,
   validateWorkspace,
@@ -220,6 +256,10 @@ module.exports = {
   updateExpenseSchema,
   expenseFiltersSchema,
   markSettlementPaidSchema,
+  bookingSchema,
+  checklistSchema,
+  shareCommentSchema,
+  checkoutSchema,
   expenseCategories,
   splitTypes
 };

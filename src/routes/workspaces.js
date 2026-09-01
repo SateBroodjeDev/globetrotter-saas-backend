@@ -538,4 +538,48 @@ router.get('/:workspaceId/analytics/activity',
   })
 );
 
+// ── Public invite endpoints (no authentication required) ─────────────────────
+
+router.get('/invite/:token', asyncHandler(async (req, res) => {
+  const invitation = await workspaceService.getInvitationByToken(req.params.token);
+
+  if (!invitation || workspaceService.isInvitationExpired(invitation) || invitation.acceptedAt) {
+    return res.status(410).json({ error: 'Invitation expired or invalid' });
+  }
+
+  const workspace = await require('../config/database').db.Workspace.findByPk(invitation.workspaceId, {
+    attributes: ['id', 'name', 'planTier']
+  });
+
+  res.json({
+    workspaceId: invitation.workspaceId,
+    workspaceName: workspace?.name,
+    workspacePlan: workspace?.planTier,
+    inviteeEmail: invitation.email,
+    inviteeRole: invitation.role
+  });
+}));
+
+router.post('/invite/:token/accept', asyncHandler(async (req, res) => {
+  const invitation = await workspaceService.getInvitationByToken(req.params.token);
+
+  if (!invitation || workspaceService.isInvitationExpired(invitation) || invitation.acceptedAt) {
+    return res.status(410).json({ error: 'Invitation expired or invalid' });
+  }
+
+  const { db } = require('../config/database');
+  const user = await db.User.findOne({ where: { email: invitation.email } });
+
+  if (!user) {
+    return res.status(400).json({ error: 'Please sign up first', requireSignup: true });
+  }
+
+  const result = await workspaceService.acceptInvitation(req.params.token, user.id);
+  res.json({
+    ...result,
+    workspaceId: invitation.workspaceId,
+    redirectUrl: `/workspace/${invitation.workspaceId}/dashboard`
+  });
+}));
+
 module.exports = router;
