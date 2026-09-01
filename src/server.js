@@ -6,7 +6,7 @@ const dotenv = require('dotenv');
 const { initializeDatabase } = require('./config/database');
 const { initializeRedis } = require('./config/redis');
 const apiRoutes = require('./routes');
-const errorHandler = require('./middleware/errorHandler');
+const { errorHandler } = require('./middleware/errorHandler');
 const { requestLogger } = require('./middleware/logging');
 const { apiLimiter } = require('./middleware/rateLimiter');
 
@@ -72,6 +72,8 @@ async function start() {
   }
 }
 
-start();
+if (require.main === module) {
+  start();
+}
 
 module.exports = app;

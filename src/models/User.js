@@ -1,7 +1,5 @@
 const { DataTypes } = require('sequelize');
 const bcrypt = require('bcryptjs');
-const { v4: uuidv4 } = require('uuid');
-
 module.exports = (sequelize) => {
   const User = sequelize.define('User', {
     id: {
@@ -35,6 +33,10 @@ module.exports = (sequelize) => {
       type: DataTypes.BOOLEAN,
       defaultValue: false
     },
+    emailVerifiedAt: {
+      type: DataTypes.DATE,
+      allowNull: true
+    },
     emailVerificationToken: {
       type: DataTypes.STRING,
       allowNull: true
@@ -52,6 +54,10 @@ module.exports = (sequelize) => {
       allowNull: true
     },
     lastLogin: {
+      type: DataTypes.DATE,
+      allowNull: true
+    },
+    lastLoginAt: {
       type: DataTypes.DATE,
       allowNull: true
     },

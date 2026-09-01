@@ -14,11 +14,17 @@ module.exports = (sequelize) => {
     },
     name: {
       type: DataTypes.STRING,
-      allowNull: false
+      allowNull: false,
+      validate: {
+        len: [1, 100]
+      }
     },
     description: {
       type: DataTypes.TEXT,
-      allowNull: true
+      allowNull: true,
+      validate: {
+        len: [0, 500]
+      }
     },
     subdomain: {
       type: DataTypes.STRING,
@@ -48,6 +54,14 @@ module.exports = (sequelize) => {
         accentColor: '#0ea5e9',
         appName: 'Globetrotter',
         domain: null
+      }
+    },
+    settings: {
+      type: DataTypes.JSONB,
+      defaultValue: {
+        theme: 'light',
+        language: 'en',
+        features: {}
       }
     },
     stripeCustomerId: {

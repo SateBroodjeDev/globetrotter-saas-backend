@@ -46,35 +46,32 @@ class EmailService {
     }
   }
 
-  async sendWelcome(user, verificationToken) {
-    const verifyUrl = `${process.env.APP_URL || 'http://localhost:3000'}/verify-email?token=${verificationToken}`;
-    const safeFirstName = escapeHtml(user.firstName || 'traveler');
+  async sendVerificationEmail(email, verificationLink) {
     return this.transporter.sendMail({
-      from: `"Globetrotter" <${process.env.EMAIL_FROM || 'noreply@globetrotter.nl'}>`,
-      to: user.email,
+      from: `"Globetrotter" <${process.env.EMAIL_FROM || 'noreply@globetrotter.io'}>`,
+      to: email,
       subject: 'Welcome to Globetrotter! Please verify your email',
       html: `
-        <h1>Welcome, ${safeFirstName}!</h1>
+        <h1>Welcome to Globetrotter!</h1>
         <p>Thank you for signing up. Please verify your email address:</p>
-        <a href="${verifyUrl}" style="background:#0ea5e9;color:white;padding:12px 24px;border-radius:8px;text-decoration:none;display:inline-block;">
+        <a href="${verificationLink}" style="background:#0ea5e9;color:white;padding:12px 24px;border-radius:8px;text-decoration:none;display:inline-block;">
           Verify Email
         </a>
-        <p>Or copy this link: ${verifyUrl}</p>
+        <p>Or copy this link: ${verificationLink}</p>
         <p>Happy travels! 🌍</p>
       `
     });
   }
 
-  async sendPasswordReset(user, resetToken) {
-    const resetUrl = `${process.env.APP_URL || 'http://localhost:3000'}/reset-password?token=${resetToken}`;
+  async sendPasswordResetEmail(email, resetLink) {
     return this.transporter.sendMail({
-      from: `"Globetrotter" <${process.env.EMAIL_FROM || 'noreply@globetrotter.nl'}>`,
-      to: user.email,
+      from: `"Globetrotter" <${process.env.EMAIL_FROM || 'noreply@globetrotter.io'}>`,
+      to: email,
       subject: 'Password Reset Request',
       html: `
         <h1>Password Reset</h1>
         <p>You requested a password reset. Click below to continue:</p>
-        <a href="${resetUrl}" style="background:#0ea5e9;color:white;padding:12px 24px;border-radius:8px;text-decoration:none;display:inline-block;">
+        <a href="${resetLink}" style="background:#0ea5e9;color:white;padding:12px 24px;border-radius:8px;text-decoration:none;display:inline-block;">
           Reset Password
         </a>
         <p>This link expires in 1 hour. If you didn't request this, ignore this email.</p>
@@ -82,21 +79,66 @@ class EmailService {
     });
   }
 
-  async sendWorkspaceInvite(email, workspace, inviteToken) {
-    const inviteUrl = `${process.env.APP_URL || 'http://localhost:3000'}/invite?token=${inviteToken}`;
-    const safeWorkspaceName = escapeHtml(workspace.name);
+  async sendWorkspaceInvitation(email, workspaceName, invitationLink, invitedByName) {
+    const safeWorkspaceName = escapeHtml(workspaceName);
+    const safeInvitedByName = escapeHtml(invitedByName || 'your team');
     return this.transporter.sendMail({
-      from: `"Globetrotter" <${process.env.EMAIL_FROM || 'noreply@globetrotter.nl'}>`,
+      from: `"Globetrotter" <${process.env.EMAIL_FROM || 'noreply@globetrotter.io'}>`,
       to: email,
       subject: `You've been invited to ${safeWorkspaceName} on Globetrotter`,
       html: `
         <h1>Workspace Invitation</h1>
-        <p>You've been invited to join <strong>${safeWorkspaceName}</strong> on Globetrotter.</p>
-        <a href="${inviteUrl}" style="background:#0ea5e9;color:white;padding:12px 24px;border-radius:8px;text-decoration:none;display:inline-block;">
+        <p>${safeInvitedByName} invited you to join <strong>${safeWorkspaceName}</strong> on Globetrotter.</p>
+        <a href="${invitationLink}" style="background:#0ea5e9;color:white;padding:12px 24px;border-radius:8px;text-decoration:none;display:inline-block;">
           Accept Invitation
         </a>
       `
     });
+  }
+
+  async sendWelcomeEmail(email, firstName, workspaceName) {
+    const safeFirstName = escapeHtml(firstName || 'traveler');
+    const safeWorkspaceName = escapeHtml(workspaceName || 'your workspace');
+    return this.transporter.sendMail({
+      from: `"Globetrotter" <${process.env.EMAIL_FROM || 'noreply@globetrotter.io'}>`,
+      to: email,
+      subject: 'Welcome to Globetrotter',
+      html: `
+        <h1>Welcome, ${safeFirstName}!</h1>
+        <p>Your workspace <strong>${safeWorkspaceName}</strong> is ready.</p>
+        <p>Happy travels! 🌍</p>
+      `
+    });
+  }
+
+  async sendWorkspaceAddedEmail(email, workspaceName, invitedByName) {
+    const safeWorkspaceName = escapeHtml(workspaceName);
+    const safeInvitedByName = escapeHtml(invitedByName || 'your team');
+    return this.transporter.sendMail({
+      from: `"Globetrotter" <${process.env.EMAIL_FROM || 'noreply@globetrotter.io'}>`,
+      to: email,
+      subject: `You've been added to ${safeWorkspaceName}`,
+      html: `
+        <h1>You've been added to a workspace</h1>
+        <p>${safeInvitedByName} added you to <strong>${safeWorkspaceName}</strong>.</p>
+      `
+    });
+  }
+
+  async sendWelcome(user, verificationToken) {
+    const verifyUrl = `${process.env.APP_URL || process.env.FRONTEND_URL || 'http://localhost:3000'}/verify-email?token=${verificationToken}`;
+    await this.sendVerificationEmail(user.email, verifyUrl);
+    return this.sendWelcomeEmail(user.email, user.firstName, null);
+  }
+
+  async sendPasswordReset(user, resetToken) {
+    const resetUrl = `${process.env.FRONTEND_URL || process.env.APP_URL || 'http://localhost:3000'}/reset-password?token=${resetToken}`;
+    return this.sendPasswordResetEmail(user.email, resetUrl);
+  }
+
+  async sendWorkspaceInvite(email, workspace, inviteToken) {
+    const inviteUrl = `${process.env.FRONTEND_URL || process.env.APP_URL || 'http://localhost:3000'}/invite?token=${inviteToken}`;
+    return this.sendWorkspaceInvitation(email, workspace.name, inviteUrl, 'your team');
   }
 }
 

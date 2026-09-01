@@ -1,42 +1,70 @@
-const { body, param, query, validationResult } = require('express-validator');
+const { body, validationResult } = require('express-validator');
 const Joi = require('joi');
+const { formatError } = require('./errorHandler');
 
 const handleValidationErrors = (req, res, next) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
-    return res.status(400).json({ 
-      error: 'Validation failed',
-      details: errors.array() 
-    });
+    return res.status(400).json(formatError('Validation failed', 'VALIDATION_ERROR', errors.array()));
   }
   next();
 };
 
 const validateAuth = {
   register: [
-    body('email').isEmail().normalizeEmail(),
-    body('password').isLength({ min: 8 }).withMessage('Password must be at least 8 characters'),
-    body('firstName').trim().optional(),
-    body('lastName').trim().optional(),
+    body('email').isEmail().withMessage('Invalid email format').normalizeEmail(),
+    body('password')
+      .isStrongPassword({ minLength: 8, minLowercase: 1, minUppercase: 1, minNumbers: 1, minSymbols: 0 })
+      .withMessage('Password must be at least 8 characters and include uppercase, lowercase and a number'),
+    body('firstName').trim().notEmpty().withMessage('First name is required'),
+    body('lastName').trim().notEmpty().withMessage('Last name is required'),
     handleValidationErrors
   ],
   login: [
     body('email').isEmail().normalizeEmail(),
     body('password').notEmpty(),
     handleValidationErrors
+  ],
+  refresh: [
+    body('refreshToken').optional().isString(),
+    body('workspaceId').optional().isUUID(),
+    handleValidationErrors
+  ],
+  logout: [
+    body('refreshToken').notEmpty().withMessage('Refresh token is required'),
+    handleValidationErrors
+  ],
+  forgotPassword: [
+    body('email').isEmail().withMessage('Invalid email format').normalizeEmail(),
+    handleValidationErrors
+  ],
+  resetPassword: [
+    body('token').notEmpty().withMessage('Reset token is required'),
+    body('newPassword')
+      .isStrongPassword({ minLength: 8, minLowercase: 1, minUppercase: 1, minNumbers: 1, minSymbols: 0 })
+      .withMessage('Password must be at least 8 characters and include uppercase, lowercase and a number'),
+    handleValidationErrors
   ]
 };
 
 const validateWorkspace = {
   create: [
-    body('name').trim().notEmpty().withMessage('Workspace name is required'),
-    body('slug').trim().isSlug().withMessage('Slug must be URL-safe'),
-    body('subdomain').trim().optional().isSlug(),
+    body('name').trim().notEmpty().isLength({ max: 100 }).withMessage('Workspace name is required and must be 100 characters or fewer'),
+    body('description').optional().trim().isLength({ max: 500 }).withMessage('Description must be 500 characters or fewer'),
     handleValidationErrors
   ],
   update: [
-    body('name').trim().optional().notEmpty(),
-    body('description').trim().optional(),
+    body('name').optional().trim().notEmpty().isLength({ max: 100 }),
+    body('description').optional().trim().isLength({ max: 500 }),
+    handleValidationErrors
+  ],
+  addMember: [
+    body('email').isEmail().withMessage('Invalid email format').normalizeEmail(),
+    body('role').optional().isIn(['viewer', 'editor', 'admin']).withMessage('Role must be viewer, editor, or admin'),
+    handleValidationErrors
+  ],
+  updateMemberRole: [
+    body('role').isIn(['viewer', 'editor', 'admin', 'owner']).withMessage('Invalid workspace role'),
     handleValidationErrors
   ]
 };
@@ -170,10 +198,11 @@ const markSettlementPaidSchema = Joi.object({
 const validateJoi = (schema, source = 'body') => (req, res, next) => {
   const { value, error } = schema.validate(req[source], { abortEarly: false, stripUnknown: true });
   if (error) {
-    return res.status(400).json({
-      error: 'Validation failed',
-      details: error.details.map((detail) => detail.message)
-    });
+    return res.status(400).json(formatError(
+      'Validation failed',
+      'VALIDATION_ERROR',
+      error.details.map((detail) => detail.message)
+    ));
   }
 
   req[source] = value;
