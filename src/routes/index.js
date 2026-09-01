@@ -9,6 +9,7 @@ const adminRoutes = require('./admin');
 const publicRoutes = require('./public');
 const settlementRoutes = require('./settlements');
 const paymentRoutes = require('./payments');
+const emailRoutes = require('./email');
 
 const router = express.Router();
 
@@ -32,5 +33,8 @@ router.use('/', settlementRoutes);
 
 // Admin routes (role-restricted inside)
 router.use('/admin', adminRoutes);
+
+// Email routes
+router.use('/email', emailRoutes);
 
 module.exports = router;

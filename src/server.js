@@ -9,6 +9,7 @@ const apiRoutes = require('./routes');
 const { errorHandler } = require('./middleware/errorHandler');
 const { requestLogger } = require('./middleware/logging');
 const { apiLimiter } = require('./middleware/rateLimiter');
+const { startEmailJobs } = require('./jobs/emailJobs');
 
 dotenv.config();
 
@@ -65,6 +66,7 @@ async function start() {
       console.log(`[✅] Server running on http://localhost:${PORT}`);
       console.log(`[✅] Environment: ${process.env.NODE_ENV}`);
       console.log(`[✅] Frontend: ${process.env.FRONTEND_URL}`);
+      startEmailJobs();
     });
   } catch (error) {
     console.error('[❌] Failed to start server:', error);
