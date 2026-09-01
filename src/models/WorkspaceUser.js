@@ -11,6 +11,11 @@ module.exports = (sequelize) => {
       type: DataTypes.ENUM('owner', 'admin', 'editor', 'viewer'),
       defaultValue: 'viewer'
     },
+    joinedAt: {
+      type: DataTypes.DATE,
+      allowNull: false,
+      defaultValue: DataTypes.NOW
+    },
     permissions: {
       type: DataTypes.JSONB,
       defaultValue: {
@@ -37,7 +42,13 @@ module.exports = (sequelize) => {
     }
   }, {
     timestamps: true,
-    paranoid: true
+    paranoid: true,
+    indexes: [
+      {
+        unique: true,
+        fields: ['workspaceId', 'userId']
+      }
+    ]
   });
 
   WorkspaceUser.associate = (models) => {

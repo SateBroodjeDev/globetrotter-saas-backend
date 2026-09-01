@@ -15,7 +15,15 @@ module.exports = (sequelize) => {
       type: DataTypes.STRING,
       allowNull: false
     },
+    entityType: {
+      type: DataTypes.STRING,
+      allowNull: true
+    },
     resourceId: {
+      type: DataTypes.STRING,
+      allowNull: true
+    },
+    entityId: {
       type: DataTypes.STRING,
       allowNull: true
     },
