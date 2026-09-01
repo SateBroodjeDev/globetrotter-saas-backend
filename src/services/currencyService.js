@@ -26,12 +26,28 @@ function requestJson(url) {
 }
 
 class CurrencyService {
+  normalizeHistoricalDate(date) {
+    if (!date) {
+      return null;
+    }
+
+    const normalizedDate = String(date).slice(0, 10);
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(normalizedDate)) {
+      const error = new Error('Invalid historical date format. Use YYYY-MM-DD');
+      error.statusCode = 400;
+      throw error;
+    }
+
+    return normalizedDate;
+  }
+
   getSupportedCurrencies() {
     return COMMON_TRAVEL_CURRENCIES;
   }
 
   async getRates(date = null) {
-    const dateKey = date || 'latest';
+    const normalizedDate = this.normalizeHistoricalDate(date);
+    const dateKey = normalizedDate || 'latest';
     const cacheKey = `${CACHE_PREFIX}${dateKey}`;
 
     if (redisClient?.isOpen) {
@@ -43,7 +59,7 @@ class CurrencyService {
       return inMemoryRateCache.get(cacheKey);
     }
 
-    const rates = await this.fetchRates(date);
+    const rates = await this.fetchRates(normalizedDate);
 
     if (redisClient?.isOpen) {
       await redisClient.set(cacheKey, JSON.stringify(rates), { EX: CACHE_TTL_SECONDS });
@@ -60,9 +76,11 @@ class CurrencyService {
       return EXCHANGE_RATES;
     }
 
-    const path = date
-      ? `https://openexchangerates.org/api/historical/${date}.json?app_id=${appId}`
-      : `https://openexchangerates.org/api/latest.json?app_id=${appId}`;
+    const safeDate = this.normalizeHistoricalDate(date);
+    const query = new URLSearchParams({ app_id: appId }).toString();
+    const path = safeDate
+      ? `https://openexchangerates.org/api/historical/${safeDate}.json?${query}`
+      : `https://openexchangerates.org/api/latest.json?${query}`;
 
     const response = await requestJson(path);
     if (!response?.rates || !response.rates.EUR) {
