@@ -7,6 +7,7 @@ const bookingRoutes = require('./bookings');
 const checklistRoutes = require('./checklist');
 const adminRoutes = require('./admin');
 const publicRoutes = require('./public');
+const shareRoutes = require('./shares');
 const settlementRoutes = require('./settlements');
 const paymentRoutes = require('./payments');
 const emailRoutes = require('./email');
@@ -26,6 +27,7 @@ router.use('/payments', paymentRoutes);
 // Protected routes
 router.use('/workspaces', workspaceRoutes);
 router.use('/trips', tripRoutes);
+router.use('/shares', shareRoutes);
 router.use('/expenses', expenseRoutes);
 router.use('/bookings', bookingRoutes);
 router.use('/checklist', checklistRoutes);

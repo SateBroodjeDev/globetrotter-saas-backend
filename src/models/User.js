@@ -110,6 +110,7 @@ module.exports = (sequelize) => {
     User.hasMany(models.Workspace, { foreignKey: 'ownerId', as: 'ownedWorkspaces' });
     User.belongsToMany(models.Workspace, { through: models.WorkspaceUser, as: 'workspaces' });
     User.hasMany(models.AuditLog, { foreignKey: 'userId', as: 'auditLogs' });
+    User.hasMany(models.TripShare, { foreignKey: 'createdBy', as: 'tripShares' });
   };
 
   return User;

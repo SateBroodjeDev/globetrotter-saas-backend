@@ -3,6 +3,7 @@ const helmet = require('helmet');
 const cors = require('cors');
 const morgan = require('morgan');
 const dotenv = require('dotenv');
+const path = require('path');
 const { initializeDatabase } = require('./config/database');
 const { initializeRedis } = require('./config/redis');
 const apiRoutes = require('./routes');
@@ -15,6 +16,7 @@ dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+const frontendDir = path.join(__dirname, '../frontend');
 
 // Security Middleware
 app.use(helmet());
@@ -32,10 +34,15 @@ app.use(requestLogger);
 // Body Parser
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ limit: '10mb', extended: true }));
+app.use(express.static(frontendDir));
 
 // Health check endpoint
 app.get('/health', (req, res) => {
   res.status(200).json({ status: 'ok', timestamp: new Date().toISOString() });
+});
+
+app.get('/trip/public/:shareToken', (req, res) => {
+  res.sendFile(path.join(frontendDir, 'trip/public.html'));
 });
 
 // API Routes

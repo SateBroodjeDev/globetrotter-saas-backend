@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Shared Trip – Globetrotter</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body { font-family: system-ui, sans-serif; }
+  </style>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen">
+  <div class="max-w-6xl mx-auto px-4 py-8 space-y-6">
+    <header class="rounded-3xl overflow-hidden border border-slate-800 bg-slate-900">
+      <div id="cover" class="h-48 bg-gradient-to-br from-sky-600 to-indigo-700"></div>
+      <div class="p-6 space-y-4">
+        <div class="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+          <div>
+            <p id="share-badge" class="text-xs uppercase tracking-[0.3em] text-sky-300">Shared trip</p>
+            <h1 id="trip-title" class="text-3xl font-bold">Loading trip…</h1>
+            <p id="share-message" class="text-slate-300 mt-2"></p>
+          </div>
+          <div class="flex flex-wrap gap-2">
+            <button id="copy-link-button" class="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-sm">Copy link</button>
+            <a id="share-twitter" href="#" target="_blank" rel="noreferrer" class="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-sm">Share on X</a>
+            <a id="share-whatsapp" href="#" target="_blank" rel="noreferrer" class="px-4 py-2 rounded-xl bg-sky-600 hover:bg-sky-500 text-sm">Share on WhatsApp</a>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div class="rounded-2xl bg-slate-800/80 p-4 border border-slate-700">
+            <p class="text-xs text-slate-400">Dates</p>
+            <p id="trip-dates" class="font-semibold mt-1">—</p>
+          </div>
+          <div class="rounded-2xl bg-slate-800/80 p-4 border border-slate-700">
+            <p class="text-xs text-slate-400">Budget</p>
+            <p id="trip-budget" class="font-semibold mt-1">—</p>
+          </div>
+          <div class="rounded-2xl bg-slate-800/80 p-4 border border-slate-700">
+            <p class="text-xs text-slate-400">Views</p>
+            <p id="trip-views" class="font-semibold mt-1">0</p>
+          </div>
+          <div class="rounded-2xl bg-slate-800/80 p-4 border border-slate-700">
+            <p class="text-xs text-slate-400">Comments</p>
+            <p id="trip-comments-count" class="font-semibold mt-1">0</p>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <div id="error-state" class="hidden rounded-2xl border border-rose-700 bg-rose-950/50 p-6 text-rose-100"></div>
+
+    <main id="content" class="grid grid-cols-1 lg:grid-cols-[2fr_1fr] gap-6 hidden">
+      <section class="space-y-6">
+        <article class="rounded-3xl border border-slate-800 bg-slate-900 p-6">
+          <h2 class="text-xl font-semibold mb-3">Trip Overview</h2>
+          <p id="trip-description" class="text-slate-300 leading-7"></p>
+        </article>
+
+        <article class="rounded-3xl border border-slate-800 bg-slate-900 p-6">
+          <div class="flex items-center justify-between gap-3 mb-4">
+            <h2 class="text-xl font-semibold">Expense Summary</h2>
+            <span id="expense-mode" class="text-xs text-slate-400"></span>
+          </div>
+          <div class="grid sm:grid-cols-2 gap-4 mb-5">
+            <div class="rounded-2xl bg-slate-800 p-4 border border-slate-700">
+              <p class="text-xs text-slate-400">Total spent</p>
+              <p id="expense-total" class="text-2xl font-bold mt-1">€0.00</p>
+            </div>
+            <div class="rounded-2xl bg-slate-800 p-4 border border-slate-700">
+              <p class="text-xs text-slate-400">Tracked expenses</p>
+              <p id="expense-count" class="text-2xl font-bold mt-1">0</p>
+            </div>
+          </div>
+          <div id="expense-categories" class="grid sm:grid-cols-2 gap-3 mb-5"></div>
+          <div id="expenses-list" class="space-y-3"></div>
+        </article>
+
+        <article class="rounded-3xl border border-slate-800 bg-slate-900 p-6">
+          <h2 class="text-xl font-semibold mb-4">Trip Timeline</h2>
+          <div id="timeline-list" class="space-y-4"></div>
+        </article>
+
+        <article class="rounded-3xl border border-slate-800 bg-slate-900 p-6">
+          <h2 class="text-xl font-semibold mb-4">Bookings & Documents</h2>
+          <div id="bookings-list" class="space-y-3"></div>
+        </article>
+
+        <article id="comments-section" class="rounded-3xl border border-slate-800 bg-slate-900 p-6">
+          <div class="flex items-center justify-between gap-3 mb-4">
+            <h2 class="text-xl font-semibold">Visitor Comments</h2>
+            <span id="comments-approved-count" class="text-sm text-slate-400">0 approved</span>
+          </div>
+
+          <form id="comment-form" class="space-y-3 rounded-2xl bg-slate-800 border border-slate-700 p-4">
+            <div class="grid md:grid-cols-2 gap-3">
+              <input id="visitor-name" type="text" placeholder="Your name" class="w-full rounded-xl bg-slate-900 border border-slate-700 px-3 py-2 outline-none focus:border-sky-500">
+              <input id="visitor-email" type="email" placeholder="Email (optional)" class="w-full rounded-xl bg-slate-900 border border-slate-700 px-3 py-2 outline-none focus:border-sky-500">
+            </div>
+            <textarea id="comment-text" placeholder="Share your thoughts about this trip" class="w-full min-h-[120px] rounded-xl bg-slate-900 border border-slate-700 px-3 py-2 outline-none focus:border-sky-500"></textarea>
+            <div class="flex items-center justify-between gap-3">
+              <p id="comment-feedback" class="text-sm text-slate-400"></p>
+              <button type="submit" class="px-4 py-2 rounded-xl bg-sky-600 hover:bg-sky-500 font-medium">Submit comment</button>
+            </div>
+          </form>
+
+          <div id="comments-list" class="space-y-4 mt-6"></div>
+        </article>
+      </section>
+
+      <aside class="space-y-6">
+        <article class="rounded-3xl border border-slate-800 bg-slate-900 p-6">
+          <h2 class="text-lg font-semibold mb-4">Travellers</h2>
+          <div id="members-list" class="space-y-3"></div>
+        </article>
+
+        <article class="rounded-3xl border border-slate-800 bg-slate-900 p-6">
+          <h2 class="text-lg font-semibold mb-4">Sharing Details</h2>
+          <dl class="space-y-3 text-sm">
+            <div class="flex justify-between gap-4">
+              <dt class="text-slate-400">Visibility</dt>
+              <dd id="share-visibility">Public</dd>
+            </div>
+            <div class="flex justify-between gap-4">
+              <dt class="text-slate-400">Expense details</dt>
+              <dd id="share-expenses">Visible</dd>
+            </div>
+            <div class="flex justify-between gap-4">
+              <dt class="text-slate-400">Settlements</dt>
+              <dd>Hidden</dd>
+            </div>
+            <div class="flex justify-between gap-4">
+              <dt class="text-slate-400">Expires</dt>
+              <dd id="share-expires">Never</dd>
+            </div>
+          </dl>
+        </article>
+      </aside>
+    </main>
+  </div>
+
+  <script src="/js/public-share.js"></script>
+</body>
+</html>
