@@ -1,5 +1,6 @@
 const { db } = require('../config/database');
 const currencyService = require('./currencyService');
+const emailService = require('./emailService');
 
 class ExpenseService {
   static EXPENSE_CATEGORIES = ['food', 'transport', 'hotel', 'activities', 'shopping', 'drinks', 'services', 'other'];
@@ -68,6 +69,23 @@ class ExpenseService {
         }
       }
     });
+
+    // Notify other trip members about the new expense (respecting preferences)
+    try {
+      const members = await db.TripMember.findAll({
+        where: { tripId, userId: { [require('sequelize').Op.ne]: userId } },
+        include: [{ model: db.User, attributes: ['id', 'email', 'firstName'] }]
+      });
+      for (const member of members) {
+        if (!member.User) continue;
+        const prefs = await db.EmailPreference.findOne({ where: { userId: member.User.id } });
+        if (prefs && (prefs.expenseNotifications === 'off' || prefs.unsubscribedAt)) continue;
+        await emailService.sendExpenseAddedEmail(member.User.email, member.User.firstName, expense, trip)
+          .catch(err => console.warn('[expenseService] Failed to send expense notification:', err.message));
+      }
+    } catch (err) {
+      console.warn('[expenseService] Expense notification error:', err.message);
+    }
 
     return expense;
   }

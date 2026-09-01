@@ -394,6 +394,16 @@ class WorkspaceService {
       after: { role: newRole }
     }, meta);
 
+    // Notify the affected member
+    try {
+      const user = await db.User.findByPk(userId);
+      if (user) {
+        await emailService.sendRoleChangedEmail(user.email, workspaceId, before.role, newRole);
+      }
+    } catch (err) {
+      console.warn('[workspaceService] Failed to send role changed email:', err.message);
+    }
+
     return membership;
   }
 
